@@ -1,0 +1,54 @@
+09-07 15:14 /Users/christopherwilliams/Dropbox/insight-data-science/project/strava_buddies/py/strava_athlete-id_prober.py 102 INFO     app id: 102, athlete range: 676 - 699
+09-07 15:14 /Users/christopherwilliams/Dropbox/insight-data-science/project/strava_buddies/py/strava_athlete-id_prober.py 102 DEBUG    Output dirs to:
+	{'BAY_AREA': '/Volumes/labBiz/strava_ids/CA/BAY_AREA/', 'CA': '/Volumes/labBiz/strava_ids/CA/', 'OTHER': '/Volumes/labBiz/strava_ids/OTHER/', 'NON_ATHLETE': '/Volumes/labBiz/strava_ids/NON_ATHLETE/'}
+09-07 15:14 requests.packages.urllib3.connectionpool INFO     Starting new HTTP connection (1): www.strava.com
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/676?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool INFO     Starting new HTTPS connection (1): www.strava.com
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/676?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/677?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/677?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/678?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/678?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/679?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/679?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/680?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/680?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/681?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/681?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/682?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/682?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/683?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:14 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/683?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/684?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/684?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/685?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/685?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/686?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/686?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/687?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/687?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/688?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/688?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/689?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/689?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/690?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/690?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/691?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/691?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/692?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/692?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/693?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/693?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/694?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 None
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/694?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/695?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/695?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/696?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/696?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/697?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/697?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 200 244
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/698?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/698?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/699?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 302 162
+09-07 15:15 requests.packages.urllib3.connectionpool DEBUG    "GET /api/v3/athletes/699?access_token=e21378aea6e4971836150bab87dcfe3edc09291f HTTP/1.1" 404 103
+09-07 15:15 /Users/christopherwilliams/Dropbox/insight-data-science/project/strava_buddies/py/strava_athlete-id_prober.py 102 INFO     Done.
