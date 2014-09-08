@@ -253,3 +253,9 @@
 09-07 15:52 ./controller_strava_athlete-id_prober.py  INFO     Assigning app 99 ids: 2940700 - 2970699 inclusive
 09-07 15:52 ./controller_strava_athlete-id_prober.py  INFO     Assigning app 100 ids: 2970700 - 3000699 inclusive
 09-07 15:52 ./controller_strava_athlete-id_prober.py  INFO     All probes assigned, exiting.
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     Spawner, requested api range: 101 - 102
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     Requested athlete range: 2 - 20
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     Requested per probe: 10
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     Assigning app 101 ids: 2 - 11 inclusive
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     Assigning app 102 ids: 12 - 20 inclusive
+09-07 22:22 ./controller_strava_athlete-id_prober.py  INFO     All probes assigned, exiting.
