@@ -8,7 +8,7 @@ __author__ = "ccwilliams"
 __date__   = "2014-09-08"
 
 from LogConfig import get_logger
-from AthleteParser import AthleteParser
+from AthleteParser import Athlete
 import pymysql as mdb
 import argparse
 
@@ -50,6 +50,17 @@ def get_unparsed_athlete_ids(conn):
     ids = cur.fetchall()
     return ids
 
+def retrieve_athlete(conn, athlete_id):
+    """Retrieves athlete data from table and initializes an Athlete obj
+       (for testing)
+    """
+    statement = "SELECT * FROM %s WHERE athlete_id = %i" % \
+                (TABLE_PARSED, athlete_id)
+    cur = conn.cursor()
+    cur.execute(statement)
+    as_sql  = cur.fetchall()[0]
+    return Athlete.from_sql( as_sql, logger )
+
 def main():
     conn = mdb.connect('localhost', 'root', '', DB_NAME,
                        autocommit=True, charset="utf8") # non-ascii
@@ -57,11 +68,10 @@ def main():
 
     logger.info("Parsing %i athletes pages..." % (len(unparsed_ids)))
     for athlete_id_tup in unparsed_ids:
-        athlete_id = athlete_id_tup[0]
+        athlete_id = athlete_id_tup[0] 
         raw_page   = get_raw_athlete_page(conn, athlete_id)
 
-        print "athlete %i" % athlete_id
-        try: athlete = AthleteParser(athlete_id, raw_page)
+        try: athlete = Athlete.from_html(athlete_id, raw_page, logger)
         
         except Exception, e:
             logger.critical("Error parsing athlete %i, error:\n%s" % \
@@ -69,8 +79,13 @@ def main():
             continue
 
         try: 
-            continue
-            #athlete.enter_parsed_data()
+            athlete.add_athlete_data(conn, TABLE_PARSED)
+
+            athlete2 = retrieve_athlete(conn, athlete_id)
+
+            print { k: v for (k,v) in athlete.__dict__.items() if k != "soup" }
+            print athlete2.__dict__
+            
 
         except Exception, e:
             logger.critical("Error writing athlete %i to DB, error:\n%s" % \
