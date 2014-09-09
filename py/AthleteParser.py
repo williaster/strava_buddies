@@ -6,67 +6,121 @@ info="""Parses the HTML for a Strava athlete HTML page to pull out interesting
 __author__ = "ccwilliams"
 __date__   = "2014-09-02"
 
-from b4 import BeautifulSoup
-import argparse
-import pandas as pd
+import numpy as np
+import warnings
+import bs4
+import re
+
+warnings.filterwarnings('error') # catch div by zero in freq by day calculation
 
 #...............................................................................
 # Global vars
-
-
-#...............................................................................
-# Input arguments if script
+MI_PER_KM = 0.621
 
 #...............................................................................
 # Classes
-
 class AthleteParser(object):
-    """Class representing a strava athlete
-       Represented as a dataframe 
+    """Class representing a strava athlete, methods enable parsing raw athlete
+       pages
     """
-    DAYS_OF_WEEK       = ["M", "T", "W", "Th", "F", "S", "S"] 
-    CLASS_NUM_RUN_RIDE = "activity-breakdown"
-    CLASS_ROW_CAL      = "activity-calendar"
-    CLASS_ANNUAL_VIEW  = ""
+    def __init__(self, athlete_id, raw_html):
+        self.athlete_id  = athlete_id
+        self.soup        = bs4.BeautifulSoup(raw_html)
+        self.run_ct      = self.get_run_ct()
+        self.ride_ct     = self.get_ride_ct()
+        self.frequencies = self.get_freq_by_day()
+        self.distance_median, self.distance_std = \
+            self.get_annual_dist_median_std_dev()
 
-    def __init__(self, html_str):
-        self.strava_id   = strava_id
-        self.doc         = get_doc(html_str)
-        self.runs, \
-            self.rides   = get_run_ride_ct()
-                
+        print "median", self.distance_median
+        print "std", self.distance_std
+        print "mi-per-px", self.get_mi_per_px()
+        print "run-ct", self.run_ct
+        print "ride-ct", self.ride_ct
+        print "freqs", self.frequencies
+        
 
-    @staticmethod     
-    def get_doc(file_or_url):
-        """Returns the documenet root element for the input URL or file
-        """
-        return parse(file_or_url).getroot()
-
-    def get_run_ride_ct(self):
-        """Returns a dataframe containing the number of run and ride activities 
-           for the athlete from the four-week dashboard, with days of the week 
-           as columns
-        """
-        ct_div = self.doc.find_class()
-        return 
-
-    def get_avg_ct_dist_time(self):
-        """Returns a data frame with "ride" and "run" rows and 4-week averages
-           for "avg_ct", "avg_distance", "avg_time" as cols
-        """
-        return
-
-    def get_annual_variability(self):
+    def get_run_ct(self):
         """
         """
-        return
+        run_icon = self.soup.select(".activity-breakdown .icon-run")[0]
+        run_ct   = int( run_icon.previous_sibling.previous_sibling.text )
+        return run_ct
 
-    def find_annual_start(self):
-        """Finds the first month from the yearly activity view where the 
-           athlete has an activity
+    def get_ride_ct(self):
         """
-        return
+        """
+        ride_icon = self.soup.select(".activity-breakdown .icon-ride")[0]
+        ride_ct   = int( ride_icon.previous_sibling.previous_sibling.text )
+        return ride_ct
 
+    def get_freq_by_day(self):
+        rows = self.soup.select(".activity-calendar .row")[1:-1] #  0 = headers
+                                                                 # -1 = variable
+        result = np.empty(shape=(3,7)) # no div by zero, 'pseudo ct'
+
+        for i in range( len(rows) ): # for each week
+            all_days  = rows[i].select(".day")
+        
+            #highlighted = activity
+            activity_days = set( rows[i].select(".highlighted") )
+        
+            # boolean list for where activities occurr
+            result[i] = [ day in activity_days for day in all_days ]
+       
+        try: 
+            return result.sum(axis=0) / result.sum()
+        except Warning:
+            return np.array([0 for i in range(7)])
+
+    def get_mi_per_px(self):
+        """Returns the scale for the annual distance per week interval,
+           in miles per px or computing distances from element px
+        """
+        get_px    = lambda tick: int( re.findall("[a-z:]*([\d]+)px", 
+                                                 tick.get("style"))[0] )
+        yaxis     = self.soup.select("ul.y-axis")[0]
+        two_ticks = yaxis.findChildren()[:2]
+        adj_units = MI_PER_KM if "km" in two_ticks[0].text else 1 # store 1 unit
+
+        delta_mi  = int( two_ticks[1].text ) * adj_units # tick 1 = 0
+        delta_px  = ( get_px(two_ticks[1]) - get_px(two_ticks[0]) )
+
+        return delta_mi / float(delta_px)
+
+    def get_annual_distances(self, ivals, mi_per_px):
+        """Returns a numpy array of weekly intervals in mi, for the year
+           as well as the first non-zero index for subsequent computations
+        """
+        dists        = np.array([ self.get_ival_distance(ival, mi_per_px) \
+                                  for ival in ivals ])
+        idx_non_zero = np.argmax( dists > 0 ) #
+        return dists, idx_non_zero
+
+    def get_ival_distance(self, ival, mi_per_px):
+        """Returns the distance in mi for a single distance interval
+        """
+        try: 
+            ival_bar = ival.select("div.fill")[0]
+        except: # no bar
+            return 0
+    
+        get_px   = lambda bar: int(re.findall("[a-z:]*([\d]+)px", 
+                                              bar.get("style"))[0])
+        px_dist  = get_px(ival_bar)
+        return mi_per_px * px_dist
+
+    def get_annual_dist_median_std_dev(self):
+        """Computes the annual activity (does not distinguish run vs ride)
+           distance median and standard deviation in mi, starting from the first
+           logged activity this year
+        """
+        weekly_ivals        = self.soup.select("li.interval")[:-1] # last = filler
+        mi_per_px           = self.get_mi_per_px()
+        dists, idx_non_zero = self.get_annual_distances(weekly_ivals, mi_per_px)
+        print "dists", dists 
+        print "1st non-zero idx", idx_non_zero
+        return np.median(dists[idx_non_zero:]), np.median(dists[idx_non_zero:])
 
 #...............................................................................
 # 
