@@ -1,4 +1,4 @@
-#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
+#!/usr/bin/env python
 info="""
      """
 
@@ -71,7 +71,7 @@ def check_status(response, athlete_id):
         status.add( STATUS_EXCEED )
 
     else:
-        logger.warning("unknown status @athlete_id %i:\n\t: %s" % \
+        logger.critical("unknown status @athlete_id %i:\n\t: %s" % \
                        (athlete_id, headers))
 
     if usage["short"] >= LIMIT_SHORT:
