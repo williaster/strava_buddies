@@ -17,7 +17,7 @@ import os
 LIMIT_LONG  = 30000 # req per day
 LIMIT_SHORT = 600   # req per 15 min
 PAUSE_SHORT = 15*60*60+1 # 15 min, in sec
-TIME_BT_REQ = [1, 4]     # max = 1.5s / req
+TIME_BT_REQ = [1, 3]     # max = 1.5s / req
 
 DB_NAME        = "accts_and_apps" 
 TABLE_APPS     = "strava_apps"
@@ -171,90 +171,3 @@ if __name__ == "__main__":
     args   = prsr.parse_args()
     logger = get_logger(__file__, args.id_strava_app)
     main()
-
-
-"""
-BASE_DIR        = "/Volumes/labBiz/strava_ids"
-OUTDIR_CA       = "/CA/"
-OUTDIR_BAY_AREA = "/CA/BAY_AREA/"
-OUTDIR_OTHER    = "/OTHER/"
-OUTDIR_BAD      = "/NON_ATHLETE/"
-CA_SYNONYMS     = set(["ca", "california"]) # I think they used to spell fully
-CITIES_BAY_AREA = set(["san francisco",     # Cities to consider as Bay Area
-                       "san mateo",
-                       "sausalito",
-                       "belmont",
-                       "berkeley",
-                       "palo alto", 
-                       "los altos", 
-                       "daly city", 
-                       "south san francisco",
-                       "corte madera",
-                       "burlingame",
-                       "mill valley",
-                       "belvedere tiburon",
-                       "san bruno",
-                       "san carlos",
-                       "redwood city",
-                       "tamalpais-homestead valley",
-                       "richmond",
-                       "mountain view"])
-"""
-'''
-def get_out_dirs():
-    """Compiles paths and makes dirs if they don't already exist
-    """
-    dirs = { "CA":           BASE_DIR + OUTDIR_CA,
-             "BAY_AREA":     BASE_DIR + OUTDIR_BAY_AREA,
-             "NON_ATHLETE":  BASE_DIR + OUTDIR_BAD,
-             "OTHER":        BASE_DIR + OUTDIR_OTHER }
-    # make dirs if don't exist
-    for key, directory in dirs.items(): ensure_dir(directory)
-    logger.debug("Output dirs to:\n\t%s" % dirs )
-    return dirs
-
-def ensure_dir(directory):
-    """Makes a directory if it doesn't exist
-    """
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    return
-
-def pick_outdir(response_text, dirs):
-    """Determines which outdir is appropriate given the athlete city
-    """
-    try:
-        city  = response_text["city"].lower()
-        state = response_text["state"].lower()
-    except: # bad
-        return dirs["NON_ATHLETE"], None, None
-    
-    if city in CITIES_BAY_AREA:
-        return dirs["BAY_AREA"], city, state
-    
-    elif state in CA_SYNONYMS:
-        return dirs["CA"], city, state
-    
-    else:
-        return dirs["OTHER"], city, state
-'''
-#            try:
-#                with open("%s%i" % (outdir, athlete_id), "w") as f_out: # write to file
-#                    f_out.write("%s\t%s\n" % (city, state))
-#
-#            except Exception, e: # outside ascii ranges, try just city or state
-#                logger.warning("Exception raised: %s, trying again" % e)
-#
-#                try:
-#                    with open("%s%i" % (outdir, athlete_id), "a") as f_out:
-#                        f_out.write("%s\n" % city)
-#                        logger.warning("Only city written, athlete %i" % athlete_id)
-#                except Exception:
-#                    try: 
-#                        with open("%s%i" % (outdir, athlete_id), "a") as f_out:
-#                            f_out.write("%s\n" % state)
-#                        logger.warning("Only state written, athlete %i" % athlete_id)
-#                    except:
-#                        logger.critical("Write error, athlete %i skipped" % athlete_id)
-
-
