@@ -1,4 +1,4 @@
-#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
+#!/usr/bin/env python 
 info="""Spawns off several strava athete id probers with differen api accounts,
         and divides the athlete space among them
      """
@@ -11,11 +11,11 @@ import subprocess
 import argparse
 import random
 import time
+import os
 
 TIME_BT_SPAWNS = [1, 4]
 MAX_PER_PROBE  = 30000 # athletes to assign to a single prober
-SCRIPT_SINGLE_PROBE = \
-        "/Users/christopherwilliams/Dropbox/insight-data-science/project/strava_buddies/py/strava_athlete-id_prober.py"
+SCRIPT_SINGLE_PROBE = os.getcwd() + "/strava_athlete-id_prober.py"
 
 #...............................................................................
 # Args
