@@ -1,4 +1,4 @@
-#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
+#!/usr/bin/env python
 info="""Pulls the html from an athlete page with the specified strava 
         athlete_id, and stores in the raw scraping table
      """
@@ -15,7 +15,7 @@ import pymysql as mdb
 from LogConfig import get_logger
 #from lxml.hmtl import fromstring
 
-TIME_BT_REQ = [1,3] # randomize time between requests
+TIME_BT_REQ = [0.75,2] # randomize time between requests
 PARAMS = { # required to authenticate a strava browser session, to view pages
     "utf8": None,
     "authenticity_token": None,
@@ -39,6 +39,8 @@ prsr.add_argument("-ow", "--overwrite", action="store_true",
 
 #...............................................................................
 # functions
+def rand_float(start, end):
+    return random.random() * (end - start) + start
 
 def user_has_been_scraped(conn, athlete_id):
     """Checks database to see if the athlete_id is already present
@@ -76,7 +78,7 @@ def get_auth_cookies(sesh):
         logger.critical("Error parsing login, exception:\n%s" % e)
         return False
     
-    time.sleep(random.randint( TIME_BT_REQ[0], TIME_BT_REQ[1] ))
+    time.sleep( rand_float( TIME_BT_REQ[0], TIME_BT_REQ[1] ))
     r_session = sesh.post("http://www.strava.com/session", data=PARAMS)
     return r_session.cookies
 
@@ -87,8 +89,8 @@ def main():
     cookies = get_auth_cookies(sesh)
     
     if not cookies: return
-    
-    for athlete_id in args.athlete_ids:
+
+    for athlete_id in args.athlete_ids:    
 
         has_been_scraped = user_has_been_scraped(conn, athlete_id)
 
@@ -96,7 +98,7 @@ def main():
             logger.critical("Athlete %i has been scraped, exiting" % athlete_id)
             continue
 
-        time.sleep(random.randint( TIME_BT_REQ[0], TIME_BT_REQ[1] ))
+        time.sleep( rand_float( TIME_BT_REQ[0], TIME_BT_REQ[1] ))
         r_athlete = sesh.get("http://www.strava.com/athletes/%i" % athlete_id, 
                              cookies=cookies)
 
