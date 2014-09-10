@@ -80,12 +80,7 @@ def main():
 
         try: 
             athlete.add_athlete_data(conn, TABLE_PARSED)
-
-            athlete2 = retrieve_athlete(conn, athlete_id)
-
-            print { k: v for (k,v) in athlete.__dict__.items() if k != "soup" }
-            print athlete2.__dict__
-            
+            #athlete2 = retrieve_athlete(conn, athlete_id)
 
         except Exception, e:
             logger.critical("Error writing athlete %i to DB, error:\n%s" % \

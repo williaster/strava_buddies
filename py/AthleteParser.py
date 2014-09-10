@@ -188,7 +188,7 @@ class Athlete(object):
            distance median and standard deviation in mi, starting from the first
            logged activity this year
         """
-        weekly_ivals        = self.soup.select("li.interval")[:-1] # last = filler
+        weekly_ivals        = self.soup.select("li.interval")
         mi_per_px           = self.get_mi_per_px()
         dists, idx_non_zero = self.get_annual_distances(weekly_ivals, mi_per_px)
         #print "dists", dists 
