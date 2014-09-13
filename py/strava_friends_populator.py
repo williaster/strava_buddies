@@ -23,10 +23,10 @@ conn = mdb.connect('localhost', 'root', '', DB_NAME,
 #...............................................................................
 # Input args
 prsr = argparse.ArgumentParser(description=info, fromfile_prefix_chars="@")
-prsr.add_argument("athlete_ids", type=int, nargs="+",
+prsr.add_argument("--athlete_ids", type=int, nargs="+",
                   help="Athletes to fetch friends for, must have authenticated" \
                        " the strava app corresponding to id_strava_app")
-prsr.add_argument("aceess_tokens", type=str, nargs="+",
+prsr.add_argument("--access_tokens", type=str, nargs="+",
                   help="access_tokens for the athlete_id's in athlete_ids (mat"\
                        "ched indices if multiple) for the specified API app")
 prsr.add_argument("--id_strava_app", type=int, default=102, # only app that works
@@ -56,7 +56,7 @@ def main():
     logger.info("app id: %i, fetching friends for ids %s" % \
                 (args.id_strava_app, str(args.athlete_ids)))
     
-    for i in len(args.access_tokens):
+    for i in range( len(args.access_tokens) ):
         client              = Client()
         client.access_token = args.access_tokens[i]
         athlete_id          = args.athlete_ids[i]
