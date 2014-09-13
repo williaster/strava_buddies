@@ -7,9 +7,10 @@ from stravalib.client import Client
 from flask import render_template, request, flash
 from app import app
 import pymysql as mdb
-import buddies
+import buddies as buds
 
 APP_ID       = 102 # which api account to use, 1-102
+ACTIVITY_MAX = 10
 TABLE_APPS   = "strava_apps"
 REDIRECT_URI = "http://127.0.0.1:5000/choose_activities"
 app.secret_key = 'some_secret' # for flashes
@@ -39,7 +40,20 @@ def index():
     """Home authentication page
     """ 
     title     = "STRAVA buddies | Please log in to STRAVA"
-    return render_template("index.html", title=title, auth_link=auth_link)
+    examples  = [ {"id":1, "name" : "Chris Williams"},
+                  {"id":2, "name" : "Fake name" }]
+    return render_template("index.html", title=title, auth_link=auth_link,
+                           tab="authenticate", examples=examples)
+
+@app.route('/examples_choose', methods=["POST"])
+def choose_example_activities():
+    print request.values
+    print request.form
+    print request.form["athlete_id"]
+    activities = {}
+    return render_template("choose_activities.html", athlete=athlete,
+                           client=client, activities=activities,
+                           tab="choose", examples=True)
 
 @app.route('/choose_activities')
 def choose_activities():
@@ -55,26 +69,16 @@ def choose_activities():
                                                   client_secret,
                                                   code)
     client.access_token = access_token # now authorized for user
-    athlete    = client.get_athlete()
+    athlete = client.get_athlete()
+    activities = buds.get_user_activity_options(client, ACTIVITY_MAX)
 
     print access_token # makes easier to grab manually behind the scenes
-    return render_template("choose_activities.html", athlete=athlete, client=client, str=str)
+    return render_template("choose_activities.html", athlete=athlete, 
+                           client=client, activities=activities, 
+                           tab="choose", examples=False)
 
 @app.route('/buddies', methods=["POST"])
 def buddies():
     """Display of athlete buddies
     """
-    print request.form.getlist("activities")
     return render_template("buddies.html")
-
-#..............................................................................
-# Functions
-def get_activities(self, before=None, after=None, limit=None):
-    """
-    """
-    return
-
-# filter activities
-
-
-
