@@ -13,6 +13,7 @@ APP_ID       = 102 # which api account to use, 1-102
 ACTIVITY_MAX = 10
 TABLE_APPS   = "strava_apps"
 REDIRECT_URI = "http://127.0.0.1:5000/choose_activities"
+AUTH_SCOPE   = None #"view_private" # None # none = public
 app.secret_key = 'some_secret' # for flashes
 conn = mdb.connect(user="root", host="localhost", 
                    db="accts_and_apps", charset='utf8')
@@ -30,7 +31,7 @@ def get_app_credentials(conn):
 
 client_id, client_secret = get_app_credentials(conn)
 client    = Client() # stravalib v3
-auth_link = client.authorization_url(client_id, REDIRECT_URI)
+auth_link = client.authorization_url(client_id, REDIRECT_URI, scope=AUTH_SCOPE)
 
 #..............................................................................
 # Views
