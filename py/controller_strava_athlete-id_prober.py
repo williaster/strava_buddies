@@ -15,7 +15,7 @@ import os
 
 TIME_BT_SPAWNS = [1, 4]
 MAX_PER_PROBE  = 30000 # athletes to assign to a single prober
-SCRIPT_SINGLE_PROBE = os.getcwd() + "/strava_athlete-id_prober.py"
+SCRIPT_SINGLE_PROBE = os.getcwd() + "/strava_athlete_id_prober.py"
 
 #...............................................................................
 # Args

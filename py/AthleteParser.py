@@ -78,6 +78,13 @@ class Athlete(object):
 
         return obj
 
+    @classmethod
+    def athletes_df_from_sql(cls):
+        """
+        """
+        import pandas as pd
+        return
+
     def get_name(self):
         """Fetches the athlete's first and last name, encodes as utf8 for
            non-ascii characters
