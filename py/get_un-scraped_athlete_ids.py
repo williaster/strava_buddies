@@ -1,4 +1,4 @@
-#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
+#!/usr/bin/env python
 info="""Pulls athlete_ids from the strava_ids table with cities that match a 
         those in a specified list and for which raw athlete page data do
         not exist. can over-write this filter behavior with options.

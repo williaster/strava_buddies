@@ -120,7 +120,10 @@ def add_athlete_to_db(conn, id_athlete, city, state, id_strava_app):
     statement = "INSERT INTO %s VALUES (%i, '%s', '%s', %i, DEFAULT)" % \
                 (TABLE_ATHLETES, id_athlete, city, state, id_strava_app)
     cur = conn.cursor()
-    cur.execute(statement)
+    try:
+	cur.execute(statement)
+    except Exception, e:
+	logger.critical("athlete %i, error:\n%s" % (id_athlete, e))
     return 
 
 # main

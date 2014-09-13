@@ -11,19 +11,6 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
 USE `accts_and_apps` ;
 
 -- -----------------------------------------------------
--- Table `accts_and_apps`.`strava_friends`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `accts_and_apps`.`strava_friends` ;
-
-CREATE TABLE IF NOT EXISTS `accts_and_apps`.`strava_friends` (
-  `athlete_id` INT NOT NULL,
-  `friend_athlete_id` INT NOT NULL,
-  `type` VARCHAR(15) NOT NULL COMMENT 'im_following or following_me',
-  PRIMARY KEY (`athlete_id`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `accts_and_apps`.`strava_activities`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `accts_and_apps`.`strava_activities` ;
@@ -32,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `accts_and_apps`.`strava_activities` (
   `athlete_id` INT NOT NULL,
   `activity_id` INT NOT NULL,
   `activity_type` VARCHAR(10) NOT NULL COMMENT 'run or ride',
+  `name` VARCHAR(150) NOT NULL,
   `distance` FLOAT NOT NULL COMMENT 'miles',
   `elevation_gain` FLOAT NOT NULL COMMENT 'in ft',
   `datetime_utc` DATETIME NOT NULL)

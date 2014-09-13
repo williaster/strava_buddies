@@ -90,7 +90,8 @@ class Athlete(object):
            non-ascii characters
         """
         try:
-            first, last = self.soup.select("title")[0].text.split("|")[0].split()
+            first, last = re.findall("([\w ]+) ([\w]+)", 
+				     self.soup.select("title")[0].text.split("|")[0])[0]
         except Exception, e:
             self.logger.error("Error fetching name")
             raise

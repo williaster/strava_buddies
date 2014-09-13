@@ -45,17 +45,24 @@ class ActivityFilter(AbstractFilter):
            kwarg:      value(s)        default action
            type:       'Run','Ride'    non-run, non-ride activities filtered         
            distance:   numeric         filtered if =< 0 mile
+	   private:    bool            filtered if private != False
+				       (specify False for this behavior)
         """
         
         activity_type = self.kwargs["type"] if self.kwargs.has_key("type") \
                         else ["Ride", "Run"]
         distance      = self.kwargs["distance"] if self.kwargs.has_key("distance") \
                         else 0
+	private       = self.kwargs["private"] if self.kwargs.has_key("private") \
+                        else False
         activity_id   = True if self.kwargs.has_key("ids") else False
 
         if obj.manual:
             self.filtered.append( obj )
             return self.__next__()
+	elif obj.private != private:
+	    self.filtered.append( obj )
+	    return self.__next__()
         elif obj.type not in activity_type:
             self.filtered.append( obj )
             return self.__next__()
