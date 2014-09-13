@@ -1,73 +1,78 @@
-#!/usr/bin/env python
-info="""
+#!/usr/bin/env python 
+info="""Adds friends and followers for the supplied athlete_ids to a DB.
+        Purpose of having athlete-specific access tokens is more complete
+        access.
      """
-
 __author__ = "ccwilliams" 
-__date__   = "2014-09-07"
+__date__   = "2014-09-12"
 
 from LogConfig import get_logger
-from stravalib import client
+from stravalib import Client
 import pymysql as mdb
 import argparse
-import random
 import time
 
-LIMIT_LONG  = 30000 # req per day
-LIMIT_SHORT = 600   # req per 15 min
-PAUSE_SHORT = 15*60*60+1 # 15 min, in sec
-
-DB_NAME        = "accts_and_apps" 
-TABLE_APPS     = "strava_apps"
+TIME_PAUSE    = 0.4 # in s, prevents max rate
+LIMIT_SHORT   = 2700 # req per 15 min, 3 qps. thanks paul mach
+DB_NAME       = "accts_and_apps" 
+TABLE_APPS    = "strava_apps"
+TABLE_FRIENDS = "strava_friends"
+conn = mdb.connect('localhost', 'root', '', DB_NAME, 
+                   autocommit=True, charset="utf8") #non ascii 
 
 #...............................................................................
 # Input args
 prsr = argparse.ArgumentParser(description=info, fromfile_prefix_chars="@")
-prsr.add_argument("id_strava_app", type=int,
-                  help="The id for the app whose auth key to use in API calls")
-prsr.add_argument("athlete_ids", type=int, nargs="+"
+prsr.add_argument("athlete_ids", type=int, nargs="+",
                   help="Athletes to fetch friends for, must have authenticated" \
                        " the strava app corresponding to id_strava_app")
-prsr.add_argument("aceess_tokens", type=str, nargs="+"
+prsr.add_argument("aceess_tokens", type=str, nargs="+",
                   help="access_tokens for the athlete_id's in athlete_ids (mat"\
                        "ched indices if multiple) for the specified API app")
+prsr.add_argument("--id_strava_app", type=int, default=102, # only app that works
+                  help="The id for the app whose auth key to use in API calls")
 #...............................................................................
 # helpers
-def init():
-    """Initializes the request session and fetches an access token for auth
-    """
-    conn = mdb.connect('localhost', 'root', '', DB_NAME, 
-                       autocommit=True, charset="utf8") #non ascii 
-    try: 
-        sesh         = requests.session()
-        access_token = get_access_token(conn, args.id_strava_app)
-        params       = { "access_token" : access_token }
-        #logger.info("params: %s" % params)
-    except Exception, e:
-        logger.critical("Could not fetch access_token for app %i" % \
-                        args.id_strava_app)
-        raise 
-   
-    return conn, sesh, params
-
-def add_friend_to_db(conn, id_athlete, city, state, id_strava_app):
+def add_friends_to_db(conn, athlete_id, friend_ids, type):
     """Adds athlete to the database
     """
-    statement = "INSERT INTO %s VALUES (%i, '%s', '%s', %i, DEFAULT)" % \
-                (TABLE_ATHLETES, id_athlete, city, state, id_strava_app)
-    cur = conn.cursor()
-    cur.execute(statement)
-    return 
+    for id in friend_ids:
+        try:
+            statement = "INSERT INTO %s VALUES (%i, %i, '%s')" % \
+                        (TABLE_FRIENDS, athlete_id, id, type)
+            cur = conn.cursor()
+            cur.execute(statement)
+            logger.info("%i added as %s for athlete %i" % \
+                        (id, type, athlete_id))
 
+        except Exception, e:
+            logger.critical("Error for friend %i of %i, error:\n%s" % \
+                            (athlete_id, id, e))
+     
 # main
 def main():
-    logger.info("app id: %i, athlete range: %i - %i" % \
-                (args.id_strava_app, args.id_athlete_min, args.id_athlete_max))
-    
-    conn, sesh, params = init()
+    assert len(args.athlete_ids) == len(args.access_tokens)
 
+    logger.info("app id: %i, fetching friends for ids %s" % \
+                (args.id_strava_app, str(args.athlete_ids)))
+    
+    for i in len(args.access_tokens):
+        client              = Client()
+        client.access_token = args.access_tokens[i]
+        athlete_id          = args.athlete_ids[i]
+
+
+        time.sleep(TIME_PAUSE)
+        friends   = [ friend.id for friend in client.get_athlete_friends() ]
+        time.sleep(TIME_PAUSE)
+        followers = [ follower.id for follower in client.get_athlete_followers() ]
+
+        add_friends_to_db(conn, athlete_id, friends,   type="friend")
+        add_friends_to_db(conn, athlete_id, followers, type="follower")
+        
     logger.info("Done.") 
 
 if __name__ == "__main__":
     args   = prsr.parse_args()
-    logger = get_logger(__file__, args.id_strava_app)
+    logger = get_logger(__file__)
     main()
