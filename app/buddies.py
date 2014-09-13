@@ -54,8 +54,9 @@ def get_user_activity_options(client, return_max, **kwargs):
     for act in act_filt:
         filtered_summaries.append( get_activity_summary(act) )
     
-    print "%i/%i filtered summary activities, returning %i" % \
-        (len(filtered_summaries), len(act_filt.filtered), 
+    print "%i/%i summary activities post-filters, returning %i" % \
+        (len(filtered_summaries), 
+         len(act_filt.filtered) + len(filtered_summaries), 
          min(return_max, len(filtered_summaries)))
 
     return filtered_summaries[:return_max]
