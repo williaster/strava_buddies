@@ -1,147 +1,189 @@
 #!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
-info="""Helper functions which manage the logic for buddy recommendations
+info="""Helper functions which manage the logic for buddy recommendations, with
+        cached data (ie not through api calls)
      """
 
 __author__ = "ccwilliams"
-__date__   = "2014-09-10"
+__date__   = "2014-09-13"
 
-from stravalib import Client, unithelper
 from scipy.spatial import distance
-#from LogConfig import get_logger
+from collections import Counter
 from dateutil import tz
 import pymysql as mdb
+import pandas as pd
 import numpy as np
 import filters 
 
 TZ_LOCAL  = tz.tzlocal()
-SEG_LIMIT = 500 # max numbr of segments to pull, to avoid exceeding api limits
-                # TODO: turn this into a counter?
-#logger   = get_logger(__file__)
+TABLES    = { "data":                "athletes_data",
+              "friends":             "strava_friends",
+              "segment_ranks":       "strava_segment_ranks",
+              "activity_to_segment": "activity_to_segment",
+              "activities":          "strava_activities" }
 
-def get_candidate_buddies(client, activity_ids):
-    """Wraps all of the logic for obtaining a list of candidate buddy
-       athlete_ids from a sequence of activity_id's. Order of events:
-            1. Pull detailed Activity objects for specified ids
-            2. Pulls segment's from Activity SegmentEffort objects, filters 
-               segments based on distance and grade, and unions all 
-               resultant segment_id's.
-            3. Fetches leaderboards for all filtered segment_id's
-            4. Fetches a dict of of sequences of candidate buddy athlete_id's
-               and negative control athlete_id's (which come from the top of
-               the leaderboard)
-       
-       Max number of candidate buddies returned = unique_segs * 4
-       Max number of negative controls returned = unique_segs * 1
-
-       nb: assumes activity_id's have already been filtered for REAL
-           activities (i.e., not manual uploads, etc.)
-
-       returns dict of id's and of the segments used
+#...............................................................................
+def get_user_activity_options(conn, athlete_id, return_max, min_distance=2, act_type=""):
+    """Fetches return_max user activities with distances >= min_distance for 
+       the specified athlete. If act_type != "", will fetch the specified type only 
+       ('Run' or 'Ride')
     """
-    detailed_activities = get_detailed_activites(client, activity_ids)
-    unique_segs         = get_unique_segments(detailed_activities)
-    ids = get_segment_leaderboard_ids(client, unique_segs["ids"])
-    return ids, unique_segs
+    act_type = "AND activity_type = '%s'" % act_type if act_type else act_type
 
-
-def get_user_activity_options(client, return_max, **kwargs):
-    """Fetches user activities based a limit and kwargs
-    """
-    filtered_summaries = []
-    kwargs["id"] = True
-    acts         = client.get_activities(limit=100)
-    act_filt     = filters.ActivityFilter(acts, **kwargs)
-    for act in act_filt:
-        filtered_summaries.append( get_activity_summary(act) )
+    statement = "SELECT * FROM %s WHERE athlete_id = %i AND distance >= %i %s LIMIT %i;" \
+                % (TABLES["activities"], athlete_id, min_distance, act_type, return_max)
     
-    print "%i/%i summary activities post-filters, returning %i" % \
-        (len(filtered_summaries), 
-         len(act_filt.filtered) + len(filtered_summaries), 
-         min(return_max, len(filtered_summaries)))
+    cur = conn.cursor()
+    cur.execute(statement) 
+    return get_activity_summaries( cur.fetchall() )
 
-    return filtered_summaries[:return_max]
-
-def get_detailed_activites(client, activity_ids):
-    """Fetches detailed activities for the activity_ids provided
-       #TODO It'd be cool to this in the background during act selection
+def get_activity_summaries(sql_activity_query):
+    """Pulls activity metrics and returns a dict with name, id, distance,
+       elevation, type, and date.
     """
-    print "Fetching %i detailed activities" % len(activity_ids)
-    return [ client.get_activity(id) for id in activity_ids ]
+    summaries = []
+    for activity in sql_activity_query:
+        ath_id, act_id, act_type, act_name, act_dist, act_elev, act_datetime = activity
+        as_dct = { "id": act_id, "name": act_name, "type": act_type, 
+                   "distance": act_dist, "elevation": act_elev, 
+                   "data": act_datetime.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }
+        summaries.append(as_dct)
 
-def get_unique_segments(detailed_activities):
-    """Returns a dict of the following form, for the union of segments
-       in the supplied activities
-       {"ids": [ seg_ids ...], "segs": [ seg_objs ]}
-       
-       nb: seqs have matched indices
+    print "returning %i activities" % len(summaries)
+    return summaries
+
+def get_athlete_connections(conn, athlete_id, connection_type="friend"):
+    """Returns a sequence of unique athlete_ids for the specified athlete_id of type  
+       connection_type (friend, or follower)
     """
-    all_seg_efforts = []
-    for act in detailed_activities:
-        all_seg_efforts.extend( act.segment_efforts )
+    statement = "SELECT DISTINCT friend_athlete_id FROM %s WHERE athlete_id = %i " \
+                " AND type = '%s';" % \
+                (TABLES["friends"], athlete_id, connection_type)
+    cur = conn.cursor()
+    cur.execute(statement)
+    return [ id[0] for id in cur.fetchall() ]
 
-    filt_unique     = filters.filter_segment_efforts(all_seg_efforts, unithelper)
-    result          = { "ids" : [ seg.id for seg in filt_unique ],
-                        "segs": filt_unique }
+def get_unique_segments_for_activities(conn, athlete_id, activity_ids):
+    """Returns a sequence of unique segment_ids for the specified activity_ids
+    """
+    activity_ids = activity_ids if len(activity_ids) > 1 else [activity_ids[0], -1]
+
+    statement = "SELECT DISTINCT segment_id FROM %s WHERE athlete_id = %i AND " \
+                "activity_id IN %s;" % \
+                (TABLES["activity_to_segment"], athlete_id, tuple(activity_ids)) 
+
+    cur = conn.cursor()
+    cur.execute(statement) 
+    return [ seg_id[0] for seg_id in cur.fetchall() ]
+
+def get_candidate_buddies(conn, athlete_id, activity_ids, min_grade=0, min_distance=1):
+    """Returns a Counter mapping athlete_ids to the number of times they appeared in
+       near the athlete rank in the segments for the specified athlete, for the specified
+       activities, where activity segments are filtered for minimum grade and distance.
+       nb: grade = %, distance = miles.
+    """
+    unique_segs = get_unique_segments_for_activities(conn, athlete_id, activity_ids)
+    unique_segs = unique_segs if len(unique_segs) > 1 else [unique_segs[0], -1]
+
+    statement = "SELECT auth_athlete_id, auth_athlete_rank, other_athlete_id " \
+                "FROM %s WHERE auth_athlete_id = %i AND segment_id IN %s AND " \
+                "other_athlete_rank > 1 AND segment_distance >= %.2f AND " \
+                "segment_average_grade >= %.2f;" % \
+                (TABLES["segment_ranks"], athlete_id, 
+                    tuple(unique_segs), min_distance, min_grade)
+
+    cur = conn.cursor()
+    cur.execute(statement)
+    cand_buddies = [ tup[2] for tup in cur.fetchall() ]
+    ctr_buddies  = Counter(cand_buddies)
+
+    print "%i unique segments, %i unique candidate buddies of %i total pulled for " \
+          "activities %s" % \
+          (len(unique_segs), len(ctr_buddies), len(cand_buddies), str(activity_ids))
+    return ctr_buddies
+
+def get_data_for_athletes(conn, athlete_ids=[], select=None):
+    """Returns a pd.DF of active users (run or ride ct > 0) for the specified athlete_ids
+        
+        athlete_id, 
+        ride_count, run_count, 
+        mon_freq, tues_freq, wed_freq, thurs_freq, fri_freq, sat_freq, sun_freq, 
+        annual_dist_median, annual_dist_std
+
+       @param   athlete_ids   sequence of athlete ids, if empty returns all active users
+       @param   select        csv list of columns to be returned, if None returns all
+    """
+    athletes = "AND athlete_id IN %s" % \
+               tuple(athlete_ids) if len(athlete_ids) > 0 else ""
     
-    print "Returning %i/%i filtered unique segments" % \
-        (len(filt_unique), len(all_seg_efforts))
+    select = select if select else \
+             "athlete_id, ride_count, run_count, " \
+             "mon_freq, tues_freq, wed_freq, thurs_freq, fri_freq, sat_freq, sun_freq, " \
+             "annual_dist_median, annual_dist_std"
+    
+    statement = "SELECT %s FROM %s WHERE (run_count > 0 OR ride_count > 0) %s" % \
+                (select, TABLES["data"], athletes)
+    
+    return pd.read_sql_query(statement, conn, index_col="athlete_id")
+
+def get_data_and_norm_data(conn):
+    """Returns un-normalized and normalized (xrc-meanc / stdevc) DataFrames
+       of activity metrics for all active athletes
+    """
+    data  = buds.get_data_for_athletes(conn, [])
+    ndata = (data - data.mean()) / data.std()
+
+    print "returning data for %i athletes" % data.shape[0]
+    return data, ndata
+
+def get_data_and_norm_data(conn):
+    """Returns un-normalized and normalized (xrc-meanc / stdevc) DataFrames
+       of activity metrics for all active athletes
+    """
+    data  = get_data_for_athletes(conn, [])
+    ndata = (data - data.mean()) / data.std()
+    return data, ndata
+
+def weighted_euclidean_similarity(other_athlete, curr_athlete, weights):
+    """Returns a Series of a composit as well as metric-wise similarity
+       score based on the inverse of a weighted euclidean similarity.
+    """
+    delta  = other_athlete.ix["ride_count":"annual_dist_std"] - \
+             curr_athlete.ix["ride_count":"annual_dist_std"]
+
+    comps  =  weights*delta*delta 
+    result =  pd.Series([1/(1 + np.sqrt(comps.sum())), 
+                         1/(1 + np.sqrt(comps[0])), 1/(1 + np.sqrt(comps[1])),
+                         1/np.sqrt(comps[2:9].sum()), 
+                         1/(1 + np.sqrt(comps[9])), 1/(1 + np.sqrt(comps[10]))],
+                        index=["sim", "sim_ride", "sim_run", 
+                               "sim_dowfreqs", "sim_dist", "sim_var"])
     return result
 
-def get_segment_leaderboard_ids(client, segment_ids):
-    """Returns a 
-       # TODO: change to sets once know how frequently you match in many segs
-               remove ranks once check out
+def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
+    """Connects the logic for computing similarity scores between
+       athlete_id vs thier friends and athlete_id vs candidate_buddy_ids
     """
-    user_id = client.get_athlete().id
-    result  = { "positive" : [] , "negative" : [], "ranks" : [] }
+    data, ndata   = get_data_and_norm_data(conn)
+    w_run = data.ix[athlete_id, "ride_count"] / \
+           (data.ix[athlete_id, "ride_count":"run_count"].sum())
 
-    if len(segment_ids) > SEG_LIMIT: # sample so don't exceed limit
-        segment_ids = np.random.choice(segment_ids, 
-                                       size=SEG_LIMIT, replace=False)
-    for seg_id in segment_ids:
-        try:
-            entries = \
-                client.get_segment_leaderboard(seg_id, top_results_limit=1).entries
-        except Exception, e:
-            print "Error with segment_id %i, error: %s" % (seg_id, e)
-            continue
-       
-        result["negative"].append( entries[0].athlete_id ) # 0 = rank 1
-        for entry in entries[1:]: # user not in consistent order
-            if entry.athlete_id == user_id:
-                result["ranks"].append( entry.rank )
-                continue
-            
-            result["positive"].append( entry.athlete_id )
+    # Weigh run vs ride based on fraction of activities each constitutes for athlete
+    # Weigh each day of the week as 1/7
+    weights = np.array([w_run,1-w_run,0.143,0.143,0.143,0.143,0.143,0.143,0.143,1,0.5]) 
     
-    print "Returning %i positive and %i negative athlete_id's" % \
-                (len(result["positive"]), len(result["negative"]))
-    return result
+    athlete_ndata = ndata.ix[athlete_id, :]
+    friend_ndata  = ndata.ix[friend_ids, :].dropna()
+    buddy_ndata   = ndata.ix[candidate_buddy_ids, :].dropna()
 
-def get_activity_summary(activity):
-    """Pulls activity metrics and returns a dict with id, distance,
-       elevation, and date.
+    sim_friends   = friend_ndata.apply(weighted_euclidean_similarity, axis=1, #rows
+                                       args=(athlete_ndata, weights))
+    sim_buddies   = buddy_ndata.apply(weighted_euclidean_similarity, axis=1, #rows
+                                      args=(athlete_ndata, weights))
+    print data.ix[athlete_id, :]
+    return sim_friends.median(), sim_buddies.join( data.ix[candidate_buddy_ids, :].dropna() )
+
+def get_friend_metrics(friend_ids, df_all_athletes):
     """
-    vals = { "id": activity.id, "name": activity.name, 
-             "distance": unithelper.miles(activity.distance),
-             "elevation": unithelper.feet(activity.total_elevation_gain), 
-             "date": activity.start_date.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }
-    return vals
-
-def get_user_connection_ids(client, following=True, followers=True):
-    """Returns the set of athlete_id's of the athletes the authenticated athlete
-       is either following or who are following the user, depending on params
     """
-    connection_ids = set()
-    if following:
-        for friend in client.get_athlete_friends():
-            connection_ids.add( friend.id)
-    
-    if followers:
-        for follower in client.get_athlete_followers():
-            connection_ids.add( follower.id )
-
-    print "Returning %i connection athlete_id's" % len(connection_ids)
-    return connection_ids
-
+    return pd.read_json("buddies_test.json", orient="index")
 

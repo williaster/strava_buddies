@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python 
 info="""Pulls the html from an athlete page with the specified strava 
         athlete_id, and stores in the raw scraping table
      """
@@ -49,6 +49,7 @@ def user_has_been_scraped(conn, athlete_id):
                 (TABLE_SCRAPING, athlete_id)
     cur = conn.cursor()
     return cur.execute(statement)
+
 
 def add_raw_athlete(conn, athlete_id, raw_text):
     """Enters raw text blob into database for the specified athlete.

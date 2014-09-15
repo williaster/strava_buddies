@@ -3,11 +3,12 @@ info="""Flask view mapping for the STRAVA buddies app
 __author__ = "ccwilliams"
 __date__   = "20140909" # made
 
+from flask import render_template, request, flash, jsonify
 from stravalib.client import Client
-from flask import render_template, request, flash
-from app import app
-import pymysql as mdb
 import buddies as buds
+import pymysql as mdb
+from app import app
+import pandas as pd
 
 APP_ID       = 102 # which api account to use, 1-102
 ACTIVITY_MAX = 10
@@ -78,8 +79,17 @@ def choose_activities():
                            client=client, activities=activities, 
                            tab="choose", examples=False)
 
-@app.route('/buddies', methods=["POST"])
-def buddies():
-    """Display of athlete buddies
+@app.route('/vis_get_test', methods=["GET"])
+def vis_test():
+    """Testing d3 visualization
     """
-    return render_template("buddies.html")
+    buddies = pd.read_json("app/buddies_test.json", 
+                           orient="index").to_json(orient="index")
+    friends = pd.read_json("app/friend_sum_test.json", 
+                           orient="records", typ="series").to_json()
+    return jsonify(dict(buddies=buddies, friends=friends))
+
+
+@app.route('/vis_empty', methods=["GET"]) 
+def vis_empty():
+    return render_template("vis_testing.html")

@@ -119,10 +119,10 @@ def get_segment_leaderboard_ids(client, segment_ids):
     return result
 
 def get_activity_summary(activity):
-    """Pulls activity metrics and returns a dict with id, distance,
-       elevation, and date.
+    """Pulls activity metrics and returns a dict with name, id, distance,
+       elevation, type, and date.
     """
-    vals = { "id": activity.id, "name": activity.name, 
+    vals = { "id": activity.id, "name": activity.name, "type": activity.type,
              "distance": unithelper.miles(activity.distance),
              "elevation": unithelper.feet(activity.total_elevation_gain), 
              "date": activity.start_date.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }

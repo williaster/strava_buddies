@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
 info="""Parses raw athlete html pages from the athletes_raw table and
         adds the parsed data to the athletes_data table. Parses only raw entries
         that don't have a corresponding athlete_id in the athletes_data table

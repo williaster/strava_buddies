@@ -175,6 +175,7 @@ class Athlete(object):
         """
         dists        = np.array([ self.get_ival_distance(ival, mi_per_px) \
                                   for ival in ivals ])
+        print dists
         idx_non_zero = np.argmax( dists > 0 ) #
         return dists, idx_non_zero
 
