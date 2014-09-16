@@ -83,11 +83,12 @@ def choose_activities():
 def vis_test():
     """Testing d3 visualization
     """
+    print "test"
     buddies = pd.read_json("app/buddies_test.json", 
-                           orient="index").to_json(orient="index")
-    friends = pd.read_json("app/friend_sum_test.json", 
+                           orient="index").T.to_dict().values()
+    summary = pd.read_json("app/friend_sum_test.json", 
                            orient="records", typ="series").to_json()
-    return jsonify(dict(buddies=buddies, friends=friends))
+    return jsonify(dict(buddies=buddies, summary=summary))
 
 
 @app.route('/vis_empty', methods=["GET"]) 

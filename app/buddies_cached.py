@@ -185,5 +185,5 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
 def get_friend_metrics(friend_ids, df_all_athletes):
     """
     """
-    return pd.read_json("buddies_test.json", orient="index")
+    return 
 
