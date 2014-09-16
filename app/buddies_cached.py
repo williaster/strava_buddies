@@ -101,47 +101,33 @@ def get_candidate_buddies(conn, athlete_id, activity_ids, min_grade=0, min_dista
           (len(unique_segs), len(ctr_buddies), len(cand_buddies), str(activity_ids))
     return ctr_buddies
 
-def get_data_for_athletes(conn, athlete_ids=[], select=None):
-    """Returns a pd.DF of active users (run or ride ct > 0) for the specified athlete_ids
-        
-        athlete_id, 
-        ride_count, run_count, 
-        mon_freq, tues_freq, wed_freq, thurs_freq, fri_freq, sat_freq, sun_freq, 
-        annual_dist_median, annual_dist_std
-
+def get_data_for_athletes(conn, athlete_ids=[]):
+    """Returns a pd.DF of all data columns for active users (run or ride ct > 0) 
+       for the specified athlete_ids
+       
        @param   athlete_ids   sequence of athlete ids, if empty returns all active users
-       @param   select        csv list of columns to be returned, if None returns all
     """
     athletes = "AND athlete_id IN %s" % \
                tuple(athlete_ids) if len(athlete_ids) > 0 else ""
     
-    select = select if select else \
-             "athlete_id, ride_count, run_count, " \
-             "mon_freq, tues_freq, wed_freq, thurs_freq, fri_freq, sat_freq, sun_freq, " \
-             "annual_dist_median, annual_dist_std"
+    statement = "SELECT * FROM %s WHERE (run_count > 0 OR ride_count > 0) %s" % \
+                (TABLES["data"], athletes)
     
-    statement = "SELECT %s FROM %s WHERE (run_count > 0 OR ride_count > 0) %s" % \
-                (select, TABLES["data"], athletes)
-    
-    return pd.read_sql_query(statement, conn, index_col="athlete_id")
+    all_data  = pd.read_sql_query(statement, conn, index_col="athlete_id")
+    data      = all_data.ix[:,"ride_count":"annual_dist_std"]
+    info      = all_data[["first_name", "last_name", "city", "state", "avatar_url"]]
 
-def get_data_and_norm_data(conn):
+    return data, info 
+
+def get_data_norm_data_athlete_info(conn):
     """Returns un-normalized and normalized (xrc-meanc / stdevc) DataFrames
        of activity metrics for all active athletes
     """
-    data  = buds.get_data_for_athletes(conn, [])
+    data, athlete_info = get_data_for_athletes(conn, [])
     ndata = (data - data.mean()) / data.std()
 
     print "returning data for %i athletes" % data.shape[0]
-    return data, ndata
-
-def get_data_and_norm_data(conn):
-    """Returns un-normalized and normalized (xrc-meanc / stdevc) DataFrames
-       of activity metrics for all active athletes
-    """
-    data  = get_data_for_athletes(conn, [])
-    ndata = (data - data.mean()) / data.std()
-    return data, ndata
+    return data, ndata, athlete_info
 
 def weighted_euclidean_similarity(other_athlete, curr_athlete, weights):
     """Returns a Series of a composit as well as metric-wise similarity
@@ -163,7 +149,7 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
     """Connects the logic for computing similarity scores between
        athlete_id vs thier friends and athlete_id vs candidate_buddy_ids
     """
-    data, ndata   = get_data_and_norm_data(conn)
+    data, ndata, info = get_data_norm_data_athlete_info(conn)
     w_run = data.ix[athlete_id, "ride_count"] / \
            (data.ix[athlete_id, "ride_count":"run_count"].sum())
 
@@ -172,6 +158,8 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
     weights = np.array([w_run,1-w_run,0.143,0.143,0.143,0.143,0.143,0.143,0.143,1,0.5]) 
     
     athlete_ndata = ndata.ix[athlete_id, :]
+    athlete_data  = data.ix[athlete_id, :]
+
     friend_ndata  = ndata.ix[friend_ids, :].dropna()
     buddy_ndata   = ndata.ix[candidate_buddy_ids, :].dropna()
 
@@ -179,8 +167,13 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
                                        args=(athlete_ndata, weights))
     sim_buddies   = buddy_ndata.apply(weighted_euclidean_similarity, axis=1, #rows
                                       args=(athlete_ndata, weights))
-    print data.ix[athlete_id, :]
-    return sim_friends.median(), sim_buddies.join( data.ix[candidate_buddy_ids, :].dropna() )
+    
+    # combine together for visualization
+    joined = sim_buddies.join( data.ix[candidate_buddy_ids, :].dropna() ).join(info)
+    joined["athlete_id"] = joined.index.values
+    joined["friend"]     = joined.apply(lambda row: row.athlete_id in friend_ids, axis=1)
+
+    return sim_friends.median(), joined, athlete_data
 
 def get_friend_metrics(friend_ids, df_all_athletes):
     """
