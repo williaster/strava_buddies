@@ -22,15 +22,17 @@ TABLES    = { "data":                "athletes_data",
               "activities":          "strava_activities" }
 
 #...............................................................................
-def get_user_activity_options(conn, athlete_id, return_max, min_distance=2, act_type=""):
+def get_user_activity_options(conn, athlete_id, return_max, min_distance=2, 
+                              act_type=""):
     """Fetches return_max user activities with distances >= min_distance for 
        the specified athlete. If act_type != "", will fetch the specified type only 
        ('Run' or 'Ride')
     """
     act_type = "AND activity_type = '%s'" % act_type if act_type else act_type
 
-    statement = "SELECT * FROM %s WHERE athlete_id = %i AND distance >= %i %s LIMIT %i;" \
-                % (TABLES["activities"], athlete_id, min_distance, act_type, return_max)
+    statement = \
+        "SELECT * FROM %s WHERE athlete_id = %i AND distance >= %i %s LIMIT %i;" \
+        % (TABLES["activities"], athlete_id, min_distance, act_type, return_max)
     
     cur = conn.cursor()
     cur.execute(statement) 
@@ -42,10 +44,12 @@ def get_activity_summaries(sql_activity_query):
     """
     summaries = []
     for activity in sql_activity_query:
-        ath_id, act_id, act_type, act_name, act_dist, act_elev, act_datetime = activity
+        ath_id, act_id, act_type, act_name, \
+            act_dist, act_elev, act_datetime = activity
+        
         as_dct = { "id": act_id, "name": act_name, "type": act_type, 
                    "distance": act_dist, "elevation": act_elev, 
-                   "data": act_datetime.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }
+                   "date": act_datetime.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }
         summaries.append(as_dct)
 
     print "returning %i activities" % len(summaries)

@@ -6,6 +6,7 @@ __date__   = "20140909" # made
 from flask import render_template, request, flash, jsonify
 from stravalib.client import Client
 import buddies as buds
+import buddies_cached as cbuds
 import pymysql as mdb
 from app import app
 import pandas as pd
@@ -33,6 +34,10 @@ def get_app_credentials(conn):
 client_id, client_secret = get_app_credentials(conn)
 client    = Client() # stravalib v3
 auth_link = client.authorization_url(client_id, REDIRECT_URI, scope=AUTH_SCOPE)
+cached_athletes = [ {"id": 1153632, "name" : "Athlete 1"},
+                    {"id": 164890, "name" : "Athlete 2"},
+                    {"id": 653, "name" : "Athlete 3"},
+                    {"id": 1744737, "name": "Athlete 4" } ]
 
 #..............................................................................
 # Views
@@ -41,21 +46,24 @@ auth_link = client.authorization_url(client_id, REDIRECT_URI, scope=AUTH_SCOPE)
 def index():
     """Home authentication page
     """ 
-    title     = "STRAVA buddies | Please log in to STRAVA"
-    examples  = [ {"id":1, "name" : "Chris Williams"},
-                  {"id":2, "name" : "Fake name" }]
+    title = "STRAVA buddies | Please log in to STRAVA"
     return render_template("index.html", title=title, auth_link=auth_link,
-                           tab="authenticate", examples=examples)
+                           tab="authenticate", examples=cached_athletes)
 
-@app.route('/examples_choose', methods=["POST"])
+@app.route('/choose_examples', methods=["POST"])
 def choose_example_activities():
-    print request.values
     print request.form
     print request.form["athlete_id"]
-    activities = {}
-    return render_template("choose_activities.html", athlete=athlete,
+
+    athlete_id   = int(request.form["athlete_id"])
+    athlete_name = [ dct["name"] for dct in cached_athletes if \
+                     dct["id"] == athlete_id ][0]
+    
+    activities = cbuds.get_user_activity_options(conn, athlete_id, 10)
+
+    return render_template("choose_activities.html", athlete_name=athlete_name,
                            client=client, activities=activities,
-                           tab="choose", examples=True)
+                           tab="choose", example="True")
 
 @app.route('/choose_activities')
 def choose_activities():
@@ -72,12 +80,24 @@ def choose_activities():
                                                   code)
     client.access_token = access_token # now authorized for user
     athlete = client.get_athlete()
+    athlete_name = athlete.first_name
     activities = buds.get_user_activity_options(client, ACTIVITY_MAX)
 
     print access_token # makes easier to grab manually behind the scenes
-    return render_template("choose_activities.html", athlete=athlete, 
+    return render_template("choose_activities.html", athlete_name=athlete_name, 
                            client=client, activities=activities, 
-                           tab="choose", examples=False)
+                           tab="choose", example="False")
+
+@app.route('/get_buddies', methods=["GET"])
+def get_buddies():
+    print request.args
+    print request.args["example"]
+    
+    
+    #print "ids:", activity_ids
+    #print "type", type(activity_ids[0])
+
+    return jsonify(dict(test={"t1":1}))
 
 @app.route('/vis_get_test', methods=["GET"])
 def vis_test():
@@ -89,8 +109,7 @@ def vis_test():
                            orient="records", typ="series").to_json()
     userData= pd.read_json("app/athlete_test.json",
                            orient="records", typ="series").to_json()
-    print userData
-    print friends
+
     return jsonify(dict(buddies=buddies, friends=friends, user=userData))
 
 
