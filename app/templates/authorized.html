@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body %}
+	Success!
+
+	<span>
+		Welcome, {{  athlete.firstname }}!
+	</span>
+
+	<form action="buddies" method="POST">
+		<button type="submit" class="btn btn-default">Find buddies!</button>
+	</form>
+
+{% endblock %}

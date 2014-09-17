@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block css %}
+	<link href="../static/css/choose_activities.css" rel="stylesheet">
+{% endblock %}
+{% block body %}
+	<div class='container' id='activity-container'>	
+		<h2 class='welcome'>Welcome, {{ athlete_name }}!</h2>
+		<p class="lead summary">
+			Select up to 10 of your recent activities to find new STRAVA buddies who have ridden similar routes
+		</p>
+		<div class="row">
+		  <div class="col-md-10">
+			<table class='table table-hover table-condensed'>
+			    <thead><tr>
+			        <th width='10%' style='color:#f74f00'>Date</th>
+			        <th width='65%' style='color:#f74f00'>Activity Name</th>
+			        <th width='10%' style='color:#f74f00'>Distance</th>
+			        <th width='15%' style='color:#f74f00'>Elevation gain</th>
+			    </tr></thead>
+			    <tbody>
+			    	{% for activity in activities %}
+			    	<tr class='clickableRow' id='{{ activity["id"] }}'>
+			    		<td>{{ activity["date"] }}</td>
+			    		<td><strong>{{ activity["name"] }}</strong></td>
+			    		<td>{{ activity["distance"] }}</td>
+			    		<td>{{ activity["elevation"] }}</td>
+			    	</tr>
+	  				{% endfor %}
+			    </tbody>    
+			</table>
+			<button class='btn btn-default' id='find-buddy-button'>Find buddies</button>
+		  </div>
+	  	</div>
+	</div>
+	<div class="container" id="buddy-vis-container"> 
+		-- insert buddies here --
+
+		<button class='btn btn-default' id='find-buddy-button'>Back to activities buddies</button>
+	</div>
+	<br><br><br><br>
+{% endblock %}
+
+{% block javascriptbottom %}
+<script>
+    $(document).ready(function($) { 
+    	var example = {{ example|tojson }}; // example|safe --> evals as html
+
+        $('#buddy-vis-container').hide();
+
+        $('.clickableRow').hover(function() { 
+            $(this).css('cursor', 'pointer');
+        }); // display hand on row mousevoer
+        
+        $('.clickableRow').click(function() { 
+            if ($(this).hasClass('highlight')) {
+            	$(this).removeClass('highlight');
+            } else {
+            	$(this).addClass('highlight');
+            }
+        }); 
+        
+        $('#find-buddy-button').click(function() {
+        	var activities = { example : example };
+
+        	$("tr.highlight").map(function() {
+        		var id = parseInt( $(this).attr('id') );
+        		activities[id] = id;
+        	});
+        	console.log(example);
+        	$.ajax({
+        		dataType: "JSON",
+        		url: 	  "/get_buddies", 
+        		data: 	  activities,
+        		success:  function(data) { 
+        			console.log(data);
+
+        			$('#find-buddy-button').hide();
+		        	$('#activity-container').hide();
+		        	$('#buddy-vis-container').show();
+		        	$('#choose-buddies-tab a').text('Buddies');
+        		}
+        	});
+        });
+
+    });
+</script>    
+{% endblock %}
