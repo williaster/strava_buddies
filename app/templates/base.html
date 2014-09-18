@@ -12,6 +12,9 @@
     <link href="../static/css/bootstrap.min.css" rel="stylesheet">
     <link href="../static/css/base.css" rel="stylesheet">
     <link rel="icon" href="http://d3nn82uaxijpm6.cloudfront.net/assets/favicon-3578624dbca1eda01ff67d8723f17d5e.ico">
+    <script src="../static/js/jquery.min.js"></script>
+    <script src="../static/js/bootstrap.min.js"></script>
+    <script src="../static/js/d3.v3.min.js"></script>
     {% if title %}
       <title>{{ title }}</title>
     {% else %}
@@ -57,16 +60,12 @@
     </div>
     <br><br><br>
     {% block body %}{% endblock %}
-
+    <br><br><br>
     <nav class="navbar navbar-default navbar-fixed-bottom" role="navigation" id="strava-buddies-navbar-bottom">
         <a href="https://github.com/williaster/strava_buddies">
             <img style="width:40px; height:40px; display: block; margin: 5px auto;" src="../static/imgs/github.png" alt="Project repo"/>
           </a>
     </nav>
-    <!-- Bootstrap + jQuery
-    ================================================== -->
-    <script src="../static/js/jquery.min.js"></script>
-    <script src="../static/js/bootstrap.min.js"></script>
     {% block javascriptbottom %}{% endblock %}
   </body>
 </html>

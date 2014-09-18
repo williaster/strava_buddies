@@ -79,6 +79,7 @@ def get_unique_segments_for_activities(conn, athlete_id, activity_ids):
     cur.execute(statement) 
     return [ seg_id[0] for seg_id in cur.fetchall() ]
 
+
 def get_candidate_buddies(conn, athlete_id, activity_ids, min_grade=0, min_distance=1):
     """Returns a Counter mapping athlete_ids to the number of times they appeared in
        near the athlete rank in the segments for the specified athlete, for the specified
@@ -98,11 +99,11 @@ def get_candidate_buddies(conn, athlete_id, activity_ids, min_grade=0, min_dista
     cur = conn.cursor()
     cur.execute(statement)
     cand_buddies = [ tup[2] for tup in cur.fetchall() ]
-    ctr_buddies  = Counter(cand_buddies)
+    ctr_buddies  = Counter(cand_buddies), len(unique_segs)
 
     print "%i unique segments, %i unique candidate buddies of %i total pulled for " \
           "activities %s" % \
-          (len(unique_segs), len(ctr_buddies), len(cand_buddies), str(activity_ids))
+          (len(unique_segs), len(ctr_buddies[0]), len(cand_buddies), str(activity_ids))
     return ctr_buddies
 
 def get_data_for_athletes(conn, athlete_ids=[]):
@@ -179,8 +180,27 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
 
     return sim_friends.median(), joined, athlete_data
 
-def get_friend_metrics(friend_ids, df_all_athletes):
+def get_buddies_and_similarities(conn, athlete_id, activity_ids, max_buddies):
+    """Returns all data needed for candidate buddy recommendation and visualization:
+       #TODO
     """
-    """
-    return 
+    friend_ids      = get_athlete_connections(conn, athlete_id) 
+    buddies, n_segs = get_candidate_buddies(conn, athlete_id, activity_ids) 
+    buddy_ids       = buddies.keys()
+    n_candidates    = len(buddy_ids)
+
+    similarity_friends, \
+    similarity_buddies, \
+    user_data        = get_similarities(conn, athlete_id, friend_ids, buddy_ids)
+
+    
+    final_buddies = similarity_buddies.sort("sim", ascending=False)[:max_buddies]
+
+    result = { "n_candidates": n_candidates, # conversions d3 data formatting
+               "n_segments":   n_segs,
+               "friends":      similarity_friends.to_json(),
+               "user":         user_data.to_json(),
+               "buddies":      final_buddies.T.to_dict().values() }
+
+    return result
 

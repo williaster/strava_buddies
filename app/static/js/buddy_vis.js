@@ -1,0 +1,650 @@
+function showStats(data) {
+
+}
+
+function makeVis(data) {
+	var friends  = jQuery.parseJSON( data["friends"] );
+	var userData = jQuery.parseJSON( data["user"] );
+	var buddies  = data["buddies"]; 
+
+	d3.select("#loading").remove(); // todo add summary then transition?
+		
+		// Accessor / key helpers
+	var key_simride = function(d) { return d.sim_ride; }
+	var key_simrun  = function(d) { return d.sim_run; }
+	var key_simdow  = function(d) { return d.sim_dowfreqs; }
+	var key_simdist = function(d) { return d.sim_dist; }
+	var key_sim     = function(d) { return d.sim; }
+	var athlete_name= function(d) { return d.first_name + " " + d.last_name; }
+	var athlete_first_name = function(d) { return d.first_name; }
+	var athlete_loc = function(d) { return d.city + ", " + d.state; }
+	var athlete     = function(d) { return parseInt(d.athlete_id); }
+	var key_friend  = function(d) { return d.friend; } 
+	var getMaxFreq = function(d) { // helper to get dow freq max
+		var arr = [ d.mon_freq, d.tues_freq, d.wed_freq,
+				          d.thurs_freq, d.fri_freq, d.sat_freq, d.sun_freq ];
+		return d3.max(arr);
+	}
+
+	// Sizes
+	var margin = { top: 50, right: 45, bottom: 50, left: 45 },
+	    width  = 1200 - margin.left - margin.right,
+	    height = 700 - margin.top  - margin.bottom;
+
+	var tableMargin  = { top: 50, right: 45, bottom: 10, left: 5 },
+		tableWidth   = 	300 - tableMargin.left - tableMargin.right,
+		tableHeight  =  540 - tableMargin.top  - tableMargin.bottom,
+		tableOffset  =  tableWidth + tableMargin.left + tableMargin.right;
+
+	var metricMargin = { top: 10, right: 10, bottom: 10, left: 10 },
+		metricWidth  = 200 - metricMargin.left - metricMargin.right,
+		metricHeight = 200 - metricMargin.top  - metricMargin.bottom;
+
+	var xMetricOffset = metricWidth + metricMargin.left + metricMargin.right,
+		yMetricOffset = 10; // from top
+
+	var summaryWidth   = 450,
+		summaryHeight  = 250,
+		summaryYOffset = height/2,
+		summaryXOffset = tableOffset + xMetricOffset/1.2;
+
+	var dowMargin = { left: 0 }
+		dowWidth  = 200 - dowMargin.left,
+		dowHeight = 100;
+
+	var sumMetricWidth  = 300,
+		sumMetricHeight = 150;
+
+	// Scales
+	var xScale = d3.scale.ordinal()
+		.domain(d3.range(buddies.length+1))
+		.rangeRoundBands([0, metricWidth], 0.1); 
+
+	var yScale = d3.scale.linear()
+		.range([metricHeight, 0]);
+		// domain = metric specific
+
+	var yTableScale = d3.scale.ordinal()
+		.domain(d3.range(buddies.length+1))
+		.rangeRoundBands([0, tableHeight], 0.2); 
+
+	var dowXScale = d3.scale.ordinal()
+		.domain(d3.range(7)) 
+		.rangePoints([0, dowWidth], 1);
+
+	var dowRScale = d3.scale.linear()
+		.domain([0, Math.max(d3.max(buddies, getMaxFreq), getMaxFreq(userData) )]) 
+		.range([3,12]);
+
+	// Axes
+	var xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom")
+		.tickValues([])
+		.tickSize(3);
+
+	// Arc maker
+	var pi  = Math.PI;
+	var arc = d3.svg.arc()
+		.startAngle(3*pi/2);
+		//.endAngle(3*pi/2); // radius will vary
+
+	// Colors and highlighting functions / variables
+	var highlightColor   = "#f74f00";
+	var unhighlightColor = "#e5e5e5";
+	var userColor = "#737373";
+	var clicked = false;
+
+	var highlight = function () {
+		if (clicked) { 
+			return;
+		} else {
+			var item      = d3.select(this);
+			var athlete_id = item.attr("id").substring(2);
+
+			$("rect[id$=_" + athlete_id + "], path[id$=_" + athlete_id + "]") 
+				.css("fill", highlightColor);
+		}
+	}
+	var unhighlight = function () {
+		if (clicked) { 
+			return;
+		} else {
+			var item       = d3.select(this);
+			var athlete_id = item.attr("id").substring(2);
+
+			$("rect[id$=_" + athlete_id + "], path[id$=_" + athlete_id + "]") 
+				.css("fill", unhighlightColor);
+		}
+	}
+	var click = function() {
+		// Note, some jQuery methods don't work on SVGs, hence no .remove/has/addClass()
+		var item       = d3.select(this);
+		var athlete_id = item.attr("id").substring(2);
+
+		if (clicked) { // some athlete is clicked
+
+			if (item.classed("clicked")) { // highlighted item clicked, unhighlight
+				clicked = false;
+
+				$("rect[id$=_" + athlete_id + "], path[id$=_" + athlete_id + "]")
+					.css("fill", unhighlightColor)
+					.attr("class", function(i, classes) { // remove only the clicked class
+						return classes.replace("clicked", "");
+					});
+				$("[id^=summary_]")
+					.attr("visibility", "hidden");
+
+
+			} else { // different item clicked, remove old and add new
+
+				$(".clicked")
+					.css("fill", unhighlightColor)
+					.attr("class", function(i, classes) { // remove only the clicked class
+						return classes.replace("clicked", "");
+					});
+				$("[id^=summary_]")
+					.attr("visibility", "hidden");
+
+				$("rect[id$=_" + athlete_id + "], path[id$=_" + athlete_id + "]")
+					.css("fill", highlightColor)
+					.attr("class", function(i, classes) { // add the clicked class to existing
+						return classes + " clicked";
+					});
+				$("#summary_" + athlete_id)
+					.attr("visibility", "visible");
+			}
+		
+		} else { // nothing is clicked
+			clicked = true;
+			$("rect[id$=_" + athlete_id + "], path[id$=_" + athlete_id + "]")
+				.css("fill", highlightColor)
+				.attr("class", function(i, classes) { // add the clicked class to existing
+					return classes + " clicked";
+				});
+			$("#summary_" + athlete_id)
+					.attr("visibility", "visible");
+		}
+	}
+
+	// Delay times for transitions
+	var delayAthletes    = 0;
+	var durationAthletes = 10;
+	var offseteAthletes  = 50;
+
+	var delayMetrics    = 0;
+	var durationMetrics = 10;
+	var offsetMetrics   = 50;
+	
+	var delayArcs    = 600;
+	var durationArcs = 200;
+	var offsetArcs   = 50;
+
+	// For computing arc locations, nb: each metric chart adds to this
+	var arcs = {};
+
+	// Metric small multiples
+	var metricChart = function(chart, data, key, friendAvg, type) {
+		// Get metric-specific domain, add padding so friend avg is visible
+		yScale.domain([ 1.1*Math.max(d3.max(data, key), 1.1*friendAvg),
+			            Math.min(d3.min(data, key)/1.1, friendAvg/1.1) ]);
+		
+		// sort with metric key, higher sim = better
+		var sorted = data.sort(function(a,b) { return key(b) - key(a); });
+
+		chart.selectAll("rect").data(sorted) // bar graphs, sorted
+		  .enter().append("rect")
+			.attr("class", "metric")
+			// this id format allows for highlight selectability later
+			.attr("id",function(d) {    return type + "_" + d.athlete_id; } )
+			.attr("x", function(d, i) { return xScale(i) + metricMargin.left; }) 
+			.attr("y", function(d) {    return metricHeight - metricMargin.bottom; })
+			.attr("width", xScale.rangeBand())
+			.on("mouseover", highlight).on("mouseout", unhighlight).on("mouseup", click)
+			.transition().delay(function (d,i) { return (i*offsetMetrics) + delayMetrics; })
+			.duration(durationMetrics)
+			.attr("height", function(d) { return yScale( key(d) ); })
+			.attr("y", function(d) {    return metricHeight - yScale( key(d) ) ; });
+
+
+		chart.append("g") // x axis
+				.attr("class", "x axis")
+				.attr("transform", "translate(" + metricMargin.left + "," + metricHeight + ")")
+				.call(xAxis);
+
+			chart.append("line") // friend avg line
+			.attr("class", "friend")
+		    .attr("y1", metricHeight - yScale(friendAvg) )
+		    .attr("y2", metricHeight - yScale(friendAvg) )
+		    .attr("x1", xScale(0) + metricMargin.left)
+		    .attr("x2", xScale(sorted.length) + metricMargin.left);
+
+		chart.append("text") // friend avg text 
+			.attr("class", "friend-avg-label ital")
+			.style("text-anchor", "end")
+			.text("your friends' avg")
+		    .attr("x", xScale(sorted.length) + metricMargin.left)
+		    .attr("y", metricHeight - yScale(friendAvg) - 2);
+
+		sorted.forEach(function(d,i) { // add positions for arc computations
+			if ( !(d.athlete_id in arcs) ) {
+				arcs[ d.athlete_id ] = {};
+			} 
+				arcs[ d.athlete_id ][type] = xScale(i) + metricMargin.left;
+		});
+	}
+	// Buddy table
+	var makeTable = function(table, data, sim_key, name_key, type) {
+		// sort athletes by overall similarity, higher = better
+		var sorted = data.sort(function(a,b) { return sim_key(b) - sim_key(a); });
+
+		table.selectAll("rect").data(sorted) // bar graph essentially, sorted
+		  .enter().append("rect")
+			.attr("class", function(d) {
+				if (d.friend) {
+					return "athlete-td friend";
+				} else {
+					return "athlete-td";
+			}}) 
+			.attr("id",function(d) {    return type + "_" + d.athlete_id; } )
+			.attr("x", tableMargin.left)
+			.attr("width", tableWidth - tableMargin.left)
+			.on("mouseover", highlight).on("mouseout", unhighlight).on("mouseup", click)
+			.transition().delay(function (d,i) { return (i*offseteAthletes) + delayAthletes; })
+			.duration(durationAthletes)
+			.attr("height", yTableScale.rangeBand())
+			.attr("y", function(d,i) { return yTableScale(i) + tableMargin.top;  } );
+
+		table.selectAll("text").data(sorted) // add numbers to each row
+		  .enter().append("text")
+		  	.text(function(d,i) { return (i+1) + ". "; })
+		  	.attr("class", "athlete-number emph")
+		  	.attr("text-anchor", "left")
+		  	.attr("x", 15)
+		  	.transition().delay(function (d,i) { return (i*offseteAthletes) + delayAthletes; })
+			.duration(durationAthletes)
+		  	.attr("y", function(d,i) { 
+		  		return yTableScale(i) + tableMargin.top + (yTableScale.rangeBand()/1.25);  
+		  	});
+
+		table.selectAll("text2").data(sorted) // add athlete name to each row
+		  .enter().append("text")
+		  	.text(name_key)
+		  	.attr("class", "athlete-name")
+		  	.attr("text-anchor", "left")
+		  	.attr("x", 40)
+		  	.transition().delay(function (d,i) { return (i*offseteAthletes) + delayAthletes; })
+			.duration(durationAthletes)
+		  	.attr("y", function(d,i) { 
+		  		return yTableScale(i) + tableMargin.top + (yTableScale.rangeBand()/1.25);  
+		  	});
+
+		table.append("text") // title
+				.attr("x", tableWidth/2)
+				.attr("y", tableMargin.top - 35)
+				.attr("class", "table-label emph")
+				.style("text-anchor", "middle")
+				.text("Suggested buddies");
+
+		table.append("text") // title
+			.attr("x", tableWidth/2)
+			.attr("y", tableMargin.top - 15)
+			.attr("class", "table-info")
+			.style("text-anchor", "middle")
+			.text("hover or click buddies for metrics");
+
+		table.append("text") // title
+			.attr("x", tableWidth/2)
+			.attr("y", tableMargin.top )
+			.attr("class", "table-info friend ital")
+			.style("text-anchor", "middle")
+			.text("current friends are in blue");
+	}
+	// Buddy summary small multiple
+	var buddySummary = function(d,i) {
+
+		var container = d3.select(this).append("g")
+			.attr("id", function(d) { return "summary_" + d.athlete_id; } )
+			.attr("class", "summary-container")
+			.attr("visibility", "hidden");
+
+		container.append("rect") 
+			.attr("width", summaryWidth)
+			.attr("height", summaryHeight);
+		
+		container.append("svg:image") // avatar image
+				.attr("xlink:href", d.avatar_url)
+				.attr("x", 0.05 * summaryWidth)
+				.attr("y", 0.2 * summaryHeight)
+				.attr("width", 85)
+				.attr("height", 85);
+
+		container.append("svg:a") // name
+			.attr("xlink:href", function(d){ return "https://www.strava.com/athletes/" + athlete(d) })
+			.attr("target", "_blank")
+			  .append("text")
+			  	.attr("x", 0.05 * summaryWidth)
+				.attr("y", 0.65 * summaryHeight)
+				.attr("class", "emph athlete-summary-name")
+				.style("text-anchor", "left")
+			.text(athlete_name);
+
+		container.append("text") // location
+			.attr("x", 0.05 * summaryWidth)
+				.attr("y", 0.71 * summaryHeight)
+				.attr("class", "athlete-summary-loc")
+				.style("text-anchor", "left")
+			.text(athlete_loc);
+
+		if (d.friend) {
+			container.append("text") // friend comment
+				.attr("x", 0.05 * summaryWidth)
+	  			.attr("y", 0.8 * summaryHeight)
+	  			.attr("class", "ital friend")
+	  			.style("text-anchor", "left")
+				.text("you are already friends!");
+		}
+
+		// Day of the week metrics
+		var dow = container.append("g")
+		  .append("svg")
+			.attr("x", 0.45 * summaryWidth)
+			.attr("y", 0.5 * summaryHeight)
+			.attr("width", dowWidth + dowMargin.left)
+			.attr("height", dowHeight)
+			.attr("class", "dow-container");
+
+		var dowText = dow.selectAll("text")
+			.data([ "M", "T", "W", "T", "F", "S", "S" ])
+		  .enter().append("text")
+			.text(function(d) { return d; })
+			.attr("class", "emph dow-text")
+			.style("text-anchor", "middle")
+			.attr("x", function(d, i) { return dowMargin.left + dowXScale(i); })
+			.attr("y", dowHeight / 3)
+			.style("fill", "black");
+
+		var otherCircles = dow.selectAll("circle")
+			.data([ d.mon_freq, d.tues_freq, d.wed_freq,
+				    d.thurs_freq, d.fri_freq, d.sat_freq, d.sun_freq ])
+		  .enter().append("circle")
+			.attr("cx", function(d, i) { return dowMargin.left + dowXScale(i); })
+			.attr("cy", 0.53 * dowHeight)
+			.attr("r", function(d) { return dowRScale(d); })
+			.style("fill", highlightColor);
+		
+		var userCircles = dow.selectAll("circle2")
+			.data([ userData.mon_freq, userData.tues_freq, userData.wed_freq,
+				    userData.thurs_freq, userData.fri_freq, userData.sat_freq, 
+				    userData.sun_freq ])
+		  .enter().append("circle")
+			.attr("cx", function(d, i) { return dowMargin.left + dowXScale(i); })
+			.attr("cy", 0.8 * dowHeight)
+			.attr("r", function(d) { return dowRScale(d); })
+			.style("fill", userColor);
+
+		// Count and distance metrics
+		var metricContainer = container.append("g")
+		  .append("svg")
+			.attr("x", 0.3 * summaryWidth)
+			.attr("y", 0.12 * summaryHeight)
+			.attr("width",  sumMetricWidth)
+			.attr("height", sumMetricHeight)
+			.attr("class", "metric-container");
+
+		metricContainer.append("text") // user labels
+			.attr("class", "ital emph user-label")
+			.attr("x", 0.45 * sumMetricWidth)
+			.attr("y", 0.13 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(athlete_first_name)
+			.style("fill", highlightColor);
+		metricContainer.append("text") // user labels
+			.attr("class", "ital emph user-label")
+			.attr("x", 0.69 * sumMetricWidth)
+			.attr("y", 0.13 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text("You")
+			.style("fill", userColor);
+
+		metricContainer.append("text") // Ride counts
+			.attr("class", "emph metric-label")
+			.attr("x", 0.4 * sumMetricWidth)
+			.attr("y", 0.25 * sumMetricHeight)
+			.style("text-anchor", "end")
+			.text("Ride ct")
+			.style("fill", "black");
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.45 * sumMetricWidth)
+			.attr("y", 0.25 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { return d.ride_count; })
+			.style("fill", highlightColor);
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.69 * sumMetricWidth)
+			.attr("y", 0.25 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { return userData.ride_count; })
+			.style("fill", userColor);
+
+		metricContainer.append("text") // Run counts
+			.attr("class", "emph metric-label")
+			.attr("x", 0.4 * sumMetricWidth)
+			.attr("y", 0.4 * sumMetricHeight)
+			.style("text-anchor", "end")
+			.text("Run ct")
+			.style("fill", "black");
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.45 * sumMetricWidth)
+			.attr("y", 0.4 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { return d.run_count; })
+			.style("fill", highlightColor);
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.69 * sumMetricWidth)
+			.attr("y", 0.4 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { return userData.run_count; })
+			.style("fill", userColor);
+
+		metricContainer.append("text")
+			.attr("class", "emph metric-label")
+			.attr("x", 0.4 * sumMetricWidth)
+			.attr("y", 0.55 * sumMetricHeight)
+			.style("text-anchor", "end")
+			.text("Avg dist / week")
+			.style("fill", "black");
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.45 * sumMetricWidth)
+			.attr("y", 0.55 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { 
+				return parseInt(d.annual_dist_median) + 
+					   " ± " + parseInt(d.annual_dist_std); 
+			})
+			.style("fill", highlightColor);
+		metricContainer.append("text")
+			.attr("class", "ital metric-value")
+			.attr("x", 0.69 * sumMetricWidth)
+			.attr("y", 0.55 * sumMetricHeight)
+			.style("text-anchor", "start")
+			.text(function(d) { 
+				return parseInt(userData.annual_dist_median) + 
+				       " ± " + parseInt(userData.annual_dist_std) + "mi"; 
+			})
+			.style("fill", userColor);
+
+	}
+	// Create arcs between metrics
+	var makeArcs = function(d,i) {
+		// make three arcs to connect four metrics
+		// nb: args are drawn from center, hence offset needs to be the
+		//     radius and previous diameters
+		var container = d3.select(this).append("g")
+			.attr("class", "arc-container")
+			.attr("transform", "translate(" + d["b"] + ",0)");
+
+		// var rad1 = (xMetricOffset - d["b"] + d["c"]) / 2;
+		// var rad2 = (xMetricOffset - d["c"] + d["d"]) / 2;
+		// var rad3 = (xMetricOffset - d["d"] + d["e"]) / 2;
+
+		var rad1 = (xMetricOffset - d["b"] + d["c"]) / 2;
+		var rad2 = ((xMetricOffset - d["c"] + d["d"]) / 2) + rad1;
+		var rad3 = ((xMetricOffset - d["d"] + d["e"]) / 2) + rad2;
+
+		container.append("path")
+			.attr("id", function(d) { return "f_" + d.athlete_id; } )
+			.attr("class", "arc") // for tween handle
+			.datum({ innerRadius: rad1, outerRadius: rad1 + 1.5, endAngle: 3*pi/2 })
+			.style("fill", "#ddd")
+			.attr("transform", "translate(" + rad1 + ",0)")
+			.attr("d", arc);
+
+		container.append("path")
+			.attr("id", function(d) { return "g_" + d.athlete_id; } )
+			.attr("class", "arc")
+			.datum({ innerRadius: rad2, outerRadius: rad2 + 1.5, endAngle: 3*pi/2  })
+			.style("fill", "#ddd")
+			.attr("transform", "translate(" + rad2 + ",0)")
+			// .attr("transform", "translate(" + (rad2 + 2*rad1) + ",0)")
+			.attr("d", arc);
+		
+		container.append("path")
+			.attr("id", function(d) { return "g_" + d.athlete_id; } )
+			.attr("class", "arc")
+			.datum({ innerRadius: rad3, outerRadius: rad3 + 1.5, endAngle: 3*pi/2  })
+			.style("fill", "#ddd")
+			.attr("transform", "translate(" + rad3 + ",0)")
+			// .attr("transform", "translate(" + (rad3 + 2*rad1 + 2*rad2) + ",0)")
+			.attr("d", arc);
+	}
+
+	// Append SVG containers
+	var svg = d3.select("#vis")
+	  .insert("svg", ":first-child") // prepends instead of appends
+	  	//.append("svg")
+		.attr("width", width)
+		.attr("height", height);
+
+	// Append table
+	var athleteTable = svg.append("g")
+		.attr("width", tableWidth)
+		.attr("height", tableHeight)
+		.attr("transform", "translate(" + tableMargin.left + "," + tableMargin.top + ")")
+	  .append("svg")
+	  	.attr("class", "table")
+	  	.call(makeTable, buddies, key_sim, athlete_name, "a");
+
+	// and metric graphs
+	var rideMetric = svg.append("g")
+		.attr("width", xMetricOffset)
+		.attr("height", metricHeight + metricMargin.top + metricMargin.bottom)
+		.attr("transform", 
+			  "translate(" + (tableOffset + metricMargin.left) + "," + (yMetricOffset + metricMargin.top) +")")
+	  .append("svg")
+	  	.call(metricChart, buddies, key_simride, friends.sim_ride, "b");
+
+	var runMetric = svg.append("g")
+		.attr("width", xMetricOffset)
+		.attr("height", metricHeight + metricMargin.top + metricMargin.bottom)
+		.attr("transform", 
+			  "translate(" + (tableOffset + 1*xMetricOffset + metricMargin.left) + "," + (yMetricOffset + metricMargin.top) + ")")
+	  .append("svg")
+	  	.call(metricChart, buddies, key_simrun, friends.sim_run, "c");
+
+	var dowMetric = svg.append("g")
+		.attr("width", xMetricOffset)
+		.attr("height", metricHeight + metricMargin.top + metricMargin.bottom)
+		.attr("transform", 
+			  "translate(" + (tableOffset + 2*xMetricOffset + metricMargin.left) + "," + (yMetricOffset + metricMargin.top) + ")")
+	  .append("svg")
+	  	.call(metricChart, buddies, key_simdow, friends.sim_dowfreqs, "d");
+
+	var distMetric = svg.append("g")
+		.attr("width", xMetricOffset)
+		.attr("height", metricHeight + metricMargin.top + metricMargin.bottom)
+		.attr("transform", 
+			  "translate(" + (tableOffset + 3*xMetricOffset + metricMargin.left) + "," + (yMetricOffset + metricMargin.top) + ")")
+	  .append("svg")
+	  	.call(metricChart, buddies, key_simdist, friends.sim_dist, "e");
+
+	// arcs (need to be below athlete summaries)
+	var arcsArray = [];
+	for (var id in arcs) {
+		var vals = arcs[id];
+		vals["athlete_id"] = id;
+		arcsArray.push( vals );
+	}
+
+	var arcPaths = svg.append("g").selectAll("g")
+		.data(arcsArray)
+	  .enter().append("g")
+	  	 .attr("transform",
+	  	 	   "translate(" + (tableOffset + metricMargin.left + 4) + "," + (1.1*yMetricOffset + metricMargin.top + metricHeight) +")")
+	  	 .attr("width",  4*xMetricOffset)
+		 .attr("height", 4*xMetricOffset);
+	  	 
+	arcPaths.each(makeArcs);
+
+	// athlete summaries
+	var summaries = svg.append("g").selectAll("g")
+	  	.data(buddies)
+	  .enter().append("g")
+	  	.attr("width",  summaryWidth)
+		.attr("height", summaryHeight)
+		.attr("transform", "translate(" + summaryXOffset + "," + summaryYOffset + ")");
+	  	
+	summaries.each(buddySummary);
+
+	// graph labels
+	var similarity = svg.append("text")
+		.attr("transform", 
+			  "translate(" + tableOffset + "," + (metricHeight) +") rotate(-90)")
+		.attr("class", "emph similarity-label")
+		.text("Similarity to you");
+
+	var labelMaker = function(dX, dY, text) {
+		svg.append("text")
+		.attr("transform", "translate(" + dX + "," + dY + ")")
+		.attr("class", "emph metric-label")
+		.style("text-anchor", "middle")
+		.text(text);
+	}
+
+	// Creates a tween on the specified transition's "d" attribute, transitioning
+	// any selected arcs from their current angle to the specified new angle.
+	function arcTween(transition, newAngle) {
+	  transition.attrTween("d", function(d) {
+	    var interpolate = d3.interpolate(d.endAngle, newAngle);
+	    return function(t) {
+	      d.endAngle = interpolate(t);
+	      return arc(d);
+	    };
+	  });
+	}
+
+	labelMaker((tableOffset + 0.5 * xMetricOffset + metricMargin.left-2),
+			   (yMetricOffset + 25), "Ride count");
+
+	labelMaker((tableOffset + 1.5 * xMetricOffset + metricMargin.left-2),
+			   (yMetricOffset + 25), "Run count");
+
+	labelMaker((tableOffset + 2.5 * xMetricOffset + metricMargin.left-2),
+			   (yMetricOffset + 25), "Day of the week frequency");
+
+	labelMaker((tableOffset + 3.5 * xMetricOffset + metricMargin.left-2),
+			   (yMetricOffset + 25), "Avg weekly distance");
+
+	d3.selectAll("path.arc").call(function(d,i) {
+	    d.transition()
+	    	.delay(function(d,i) { return (i*offsetArcs) + delayArcs; })
+      		.duration(durationArcs)
+      		.call(arcTween, pi/2);
+	});
+
+}

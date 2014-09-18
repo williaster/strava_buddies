@@ -590,7 +590,8 @@ $(document).ready(function($) {
 
 		// Append SVG containers
 		var svg = d3.select("#vis")
-		  .append("svg")
+		  .insert("svg", ":first-child")
+		  //.append("svg")
 			.attr("width", width)
 			.attr("height", height);
 
@@ -699,5 +700,6 @@ $(document).ready(function($) {
 {% block body %}
 <div class="container" id="vis">
 	<div id="loading">[ Finding buddies... ]</div>
+	<div>test</div>
 </div>
 {% endblock %}

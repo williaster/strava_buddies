@@ -1,52 +1,111 @@
 {% extends "base.html" %}
 
+{% block javascripttop %}
+	<script src="../static/js/bootstrap.min.js"></script>
+	<script src="../static/js/buddy_vis.js"></script>
+{% endblock %}
+
 {% block css %}
 	<link href="../static/css/choose_activities.css" rel="stylesheet">
+	<link href="../static/css/buddy_vis.css" rel="stylesheet">
 {% endblock %}
+
 {% block body %}
 	<div class='container' id='activity-container'>	
-		<h2 class='welcome'>Welcome, {{ athlete_name }}!</h2>
-		<p class="lead summary">
-			Select up to 10 of your recent activities to find new STRAVA buddies who have ridden similar routes
-		</p>
+		<div class="row">
+			<div class="col-md-10">
+				<h4 class='welcome'>Welcome, {{ athlete_name }}!</h4>
+				<p class="lead " >
+					Select several of your recent activities to find new STRAVA buddies 
+					who have <span class="Run">run</span> or 
+					<span class="Ride">ridden</span> similar places, and 
+					are comprable to you athletically. The more you select, the better.
+				</p>
+				<div id="error" class="col-md-5" style="display:none;"></div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-10">
+			<form class="form-inline pull-right" action="{{ from_url }}" method="POST">
+				<div class="form-group">
+					<input type="hidden" name="athlete_id" value="{{ athlete_id }}"></input>
+					<select class="form-control" name="n_activities" id="n-activities">
+						<option value="10">10</option>
+						<option value="20">20</option>
+						<option value="30">30</option>
+						<option value="40">40</option>
+						<option value="50">50</option>
+					</select>
+					<button class="btn" style="background-color: #f74f00; color: white;">
+	  					# activities
+	  				</button>
+				</div>
+			</form>
+			</div>
+		</div>
+		<br>
 		<div class="row">
 		  <div class="col-md-10">
 			<table class='table table-hover table-condensed'>
 			    <thead><tr>
-			        <th width='10%' style='color:#f74f00'>Date</th>
-			        <th width='65%' style='color:#f74f00'>Activity Name</th>
-			        <th width='10%' style='color:#f74f00'>Distance</th>
-			        <th width='15%' style='color:#f74f00'>Elevation gain</th>
+			        <th width='7%'  class="th-activity">Date</th>
+			        <th width='58%' class="th-activity">Activity Name</th>
+			        <th width='10%' class="th-activity">Type</th>
+			        <th width='10%' class="th-activity">Distance</th>
+			        <th width='15%' class="th-activity">Elevation gain</th>
 			    </tr></thead>
 			    <tbody>
 			    	{% for activity in activities %}
 			    	<tr class='clickableRow' id='{{ activity["id"] }}'>
 			    		<td>{{ activity["date"] }}</td>
-			    		<td><strong>{{ activity["name"] }}</strong></td>
+			    		<td style="color:black;"><strong>{{ activity["name"] }}</strong></td>
+			    		<td class="{{ activity["type"] }}">{{ activity["type"] }}</td>
 			    		<td>{{ activity["distance"] }}</td>
 			    		<td>{{ activity["elevation"] }}</td>
 			    	</tr>
 	  				{% endfor %}
 			    </tbody>    
 			</table>
-			<button class='btn btn-default' id='find-buddy-button'>Find buddies</button>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-10">
+			<button class='btn' id='find-buddy-button' style="background-color: #f74f00; color: white;">
+				Find buddies
+			</button>
 		  </div>
 	  	</div>
 	</div>
-	<div class="container" id="buddy-vis-container"> 
-		-- insert buddies here --
-
-		<button class='btn btn-default' id='find-buddy-button'>Back to activities buddies</button>
+	<div class="container" id="vis">
+		<div id="loading">
+			<div class="row">
+				<div class="col-md-4">
+					<h4 class="loading">[ Finding buddies... ]</h4>	
+					<div class="progress">
+	  					<div class="progress-bar progress-bar-striped active" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+	  				</div>
+	  			</div>
+  			</div>
+	  	</div>
+	  	<form action="{{ from_url }}" id="re-choose" method="POST">
+	  		<input type="hidden" name="athlete_id" value="{{ athlete_id }}"></input>
+	  		<input type="hidden" name="n_activities" value="{{ n_activities }}"></input>
+	  		<button class="btn btn-default" style="background-color: #f74f00; color: white;">
+	  			Select different routes
+	  		</button>
+	  	</form>
 	</div>
-	<br><br><br><br>
+	<br>
 {% endblock %}
 
 {% block javascriptbottom %}
 <script>
     $(document).ready(function($) { 
-    	var example = {{ example|tojson }}; // example|safe --> evals as html
+        $('#vis').hide();
+        $('#re-choose').hide();
 
-        $('#buddy-vis-container').hide();
+        var n_activities = {{ n_activities|tojson }}
+        $("#n-activities").val(n_activities); // set dropdown to curr value
 
         $('.clickableRow').hover(function() { 
             $(this).css('cursor', 'pointer');
@@ -61,26 +120,39 @@
         }); 
         
         $('#find-buddy-button').click(function() {
-        	var activities = { example : example };
+        	var from_url   = {{ from_url|tojson }}; 
+        	var athlete_id = {{ athlete_id|tojson }}
+        	var activities = { from_url:from_url, athlete_id:athlete_id };
 
         	$("tr.highlight").map(function() {
         		var id = parseInt( $(this).attr('id') );
         		activities[id] = id;
-        	});
-        	console.log(example);
-        	$.ajax({
-        		dataType: "JSON",
-        		url: 	  "/get_buddies", 
-        		data: 	  activities,
-        		success:  function(data) { 
-        			console.log(data);
+        	}); // get highlighted activities
 
-        			$('#find-buddy-button').hide();
-		        	$('#activity-container').hide();
-		        	$('#buddy-vis-container').show();
-		        	$('#choose-buddies-tab a').text('Buddies');
-        		}
-        	});
+        	if (Object.keys(activities).length < 4) {
+        		$('#error').show();
+        		$('#error').html(
+        			"<div class='alert alert-danger' role='alert'><strong>Error!</strong>" +
+        			" Please select at least <strong>2</strong> activities</div>"
+        		);
+        	} else {
+    			$('#find-buddy-button').hide();
+	        	$('#activity-container').hide();
+	        	$('#vis').show();
+	        	$('#choose-buddies-tab a').text('Buddies');
+
+	        	$.ajax({
+	        		dataType: "JSON",
+	        		url: 	  "/get_buddies", 
+	        		data: 	  activities,
+	        		success:  function(data) { 
+	        			console.log(data);
+	        			$('#re-choose').show();
+			        	makeVis(data);
+	        		}
+	        	});
+	        	var 
+	        }
         });
 
     });

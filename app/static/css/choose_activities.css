@@ -1,3 +1,25 @@
 .highlight {
 	background-color: #e5e5e5;
 }
+
+.Ride {
+	color: #f74f00;
+	font-weight: bold;
+}
+.Run {
+	color: #40aa0c;
+	font-weight: bold;
+}
+.loading {
+	color: #167ebb;
+}
+.th-activity {
+	color: "black";
+	font-size: 15px;
+}
+td {
+	color: #737373;
+}
+.lead {
+	font-size: 15px;
+}

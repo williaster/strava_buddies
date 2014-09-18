@@ -1,0 +1,80 @@
+rect.metric {
+	fill: #e5e5e5;
+}
+rect.athlete-td {
+	fill: #e5e5e5;
+	stroke: #f74f00;
+}
+.table-label {
+	fill: #f74f00;
+}
+.athlete-number {
+	color: white;
+}
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #737373;
+  stroke-width: 1.5px;
+  shape-rendering: crispEdges;
+}
+.axis text {
+  display: none;
+}
+text.metric-label {
+	fill: black;
+}
+text.athlete-name,
+text.athlete-number {
+	pointer-events: none;
+	font-size: 12px;
+}
+rect.friend {
+	stroke: #167ebb;
+}
+.friend  {
+	stroke: #167ebb;
+	stroke-width: 2px;
+}
+text.similarity-label {
+	fill: #737373;
+}
+text.friend {
+	stroke: none;
+	fill: #167ebb;
+}
+.emph {
+  	font-weight: bold;
+}
+.ital {
+ 	font-style: italic;
+}
+.user {
+	color: #167ebb;
+	fill: #167ebb;
+}
+.summary-container rect {
+	stroke-width: 2px;
+	stroke: #f74f00;
+	fill: white;
+}
+rect.dow-container {
+	stroke-width: 1px;
+	stroke: none;
+	fill: #aaa;	
+}
+text.table-label {
+	font-size: 20px;
+}
+text.table-info {
+	font-size: 13px;
+}
+text.metric-label {
+	font-size: 15px;
+}
+text.user-label {
+	font-size: 15px;
+}
+text.friend-avg-label {
+	fill: #167ebb;
+}
