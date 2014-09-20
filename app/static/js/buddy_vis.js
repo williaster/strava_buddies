@@ -1,15 +1,23 @@
-function showStats(data) {
+function populateSegmentStats(data, n_activities) { 
+	$("#stats-activities").text( n_activities );
+	$("#stats-candidates").text( data.n_candidates );
+	$("#stats-segments").text( data.n_segments );
+}
 
+function populateSimilarityStats(data) {
+	console.log(data);
+	$("#stats-vs-friends").text( data.perc_friends_lower + "%");
+	$("#stats-vs-region").text( data.perc_users_lower  + "%");
 }
 
 function makeVis(data) {
+	d3.select("#loading").remove();
+
 	var friends  = jQuery.parseJSON( data["friends"] );
 	var userData = jQuery.parseJSON( data["user"] );
 	var buddies  = data["buddies"]; 
-
-	d3.select("#loading").remove(); // todo add summary then transition?
 		
-		// Accessor / key helpers
+	// Accessor / key helpers
 	var key_simride = function(d) { return d.sim_ride; }
 	var key_simrun  = function(d) { return d.sim_run; }
 	var key_simdow  = function(d) { return d.sim_dowfreqs; }

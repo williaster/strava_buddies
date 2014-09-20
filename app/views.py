@@ -121,20 +121,16 @@ def get_buddies():
 
     return jsonify( result )
 
-@app.route('/vis_get_test', methods=["GET"])
-def vis_test():
-    """Testing d3 visualization
-    """
-    buddies = pd.read_json("app/buddies_test.json", 
-                           orient="index").T.to_dict().values()
-    friends = pd.read_json("app/friend_sum_test.json", 
-                           orient="records", typ="series").to_json()
-    userData= pd.read_json("app/athlete_test.json",
-                           orient="records", typ="series").to_json()
-
-    return jsonify(dict(buddies=buddies, friends=friends, user=userData))
+@app.route('/get_buddy_stats', methods=["GET", "JSON"])
+def get_stats():
+    athlete_id    = int( request.args["athlete_id"] )
+    min_buddy_sim = float( request.args["min_buddy_similarity"])
+    
+    result = cbuds.get_stats(conn, athlete_id, min_buddy_sim)
+    print result
+    return jsonify( result )
 
 
-@app.route('/vis_empty', methods=["GET"]) 
-def vis_empty():
-    return render_template("vis_testing.html")
+
+
+

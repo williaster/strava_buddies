@@ -15,7 +15,7 @@
 		<div class="row">
 			<div class="col-md-10">
 				<h4 class='welcome'>Welcome, {{ athlete_name }}!</h4>
-				<p class="lead " >
+				<p class="lead" >
 					Select several of your recent activities to find new STRAVA buddies 
 					who have <span class="Run">run</span> or 
 					<span class="Ride">ridden</span> similar places, and 
@@ -79,33 +79,67 @@
 	<div class="container" id="vis">
 		<div id="loading">
 			<div class="row">
-				<div class="col-md-4">
-					<h4 class="loading">[ Finding buddies... ]</h4>	
+				<div class="col-md-3">
+					<h5 class="loading">[ Finding buddies... ]</h5>	
 					<div class="progress">
 	  					<div class="progress-bar progress-bar-striped active" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
 	  				</div>
 	  			</div>
   			</div>
 	  	</div>
-	  	<form action="{{ from_url }}" id="re-choose" method="POST">
-	  		<input type="hidden" name="athlete_id" value="{{ athlete_id }}"></input>
-	  		<input type="hidden" name="n_activities" value="{{ n_activities }}"></input>
-	  		<button class="btn btn-default" style="background-color: #f74f00; color: white;">
-	  			Select different routes
-	  		</button>
-	  	</form>
+	  	<div id="post-buddy-options" > 
+	  		<div class="row">
+		  		<div class="col-md-2 pull-left">
+				  	<form action="{{ from_url }}" method="POST">
+				  		<input type="hidden" name="athlete_id" value="{{ athlete_id }}"></input>
+				  		<input type="hidden" name="n_activities" value="{{ n_activities }}"></input>
+				  		<button class="btn btn-default" style="background-color: #f74f00; color: white;">
+				  			Select different routes
+				  		</button>
+				  	</form>
+		  		</div>
+		  		<div class="col-md-2 pull-left">
+		  			<button class="btn btn-primary" id="stats-btn">Buddy stats</button>
+		  		</div>
+		  	</div>
+
+	  		<div id="stats-popup">
+	  			<span class="button b-close"><span>X</span></span>		  			
+	  			<div id="stats" class="col-md-12 pull-left">
+	  				<h3 class="stats-header">Buddy metrics</h3>
+	  				<p class="lead">
+	  					Summary of results, try adding additional activity routes for better or different suggestions.
+	  				</p>
+	  				<dl class="dl-horizontal" id="stats-container">
+  						<dt id="stats-activities">computing...</dt>
+  						<dd>activities considered</dd>
+  						
+  						<dt id="stats-segments">computing...</dt>
+  						<dd>unique road segments considered across these activities</dd>
+
+  						<dt id="stats-candidates">computing...</dt>
+  						<dd>athletes matched your speed on these segments</dd>
+
+  						<dt id="stats-vs-friends">computing...</dt>
+  						<dd>of your current friends are less similar to you than these buddies</dd>
+
+  						<dt id="stats-vs-region">computing...</dt>
+  						<dd>of regional athletes are less similar to you than these buddies</dd>
+					</dl>
+	  			</div>  		
+	  		</div>
+	  	</div>
 	</div>
 	<br>
 {% endblock %}
 
 {% block javascriptbottom %}
+<script src="../static/js/bPopup.0.10.0.min.js"></script>
 <script>
     $(document).ready(function($) { 
         $('#vis').hide();
-        $('#re-choose').hide();
-
-        var n_activities = {{ n_activities|tojson }}
-        $("#n-activities").val(n_activities); // set dropdown to curr value
+        $('#post-buddy-options').hide();
+        $("#n-activities").val( {{ n_activities|tojson }} ); // set dropdown to curr value
 
         $('.clickableRow').hover(function() { 
             $(this).css('cursor', 'pointer');
@@ -120,9 +154,9 @@
         }); 
         
         $('#find-buddy-button').click(function() {
-        	var from_url   = {{ from_url|tojson }}; 
-        	var athlete_id = {{ athlete_id|tojson }}
-        	var activities = { from_url:from_url, athlete_id:athlete_id };
+        	var from_url      = {{ from_url|tojson }}; 
+        	var athlete_id    = {{ athlete_id|tojson }};
+        	var activities    = { from_url:from_url, athlete_id:athlete_id };
 
         	$("tr.highlight").map(function() {
         		var id = parseInt( $(this).attr('id') );
@@ -141,20 +175,39 @@
 	        	$('#vis').show();
 	        	$('#choose-buddies-tab a').text('Buddies');
 
-	        	$.ajax({
+	        	$.ajax({ // get data for bulk of visualization
 	        		dataType: "JSON",
 	        		url: 	  "/get_buddies", 
 	        		data: 	  activities,
 	        		success:  function(data) { 
-	        			console.log(data);
-	        			$('#re-choose').show();
+	        			$('#post-buddy-options').show();
 			        	makeVis(data);
+			        	populateSegmentStats(data, Object.keys(activities).length-2);
+	        		
+			        	$.ajax({
+			        		dataType: "JSON",
+			        		url: 	  "/get_buddy_stats", 
+			        		data: 	  { athlete_id:athlete_id, 
+			        					min_buddy_similarity: data.min_buddy_similarity },
+			        		success:  function(data) { 
+					        	populateSimilarityStats(data);
+			        		}
+			        	});
 	        		}
 	        	});
-	        	var 
 	        }
         });
-
+		var statsPopup;
+		$("#stats-btn").click(function() {
+			statsPopup = $('#stats-popup').bPopup({
+            	opacity: 0.6,
+            	positionStyle: 'fixed',
+            	modalColor: '#167ebb'
+            });
+        });
+        $(".button.b-close").click(function() {
+        	statsPopup.close();
+        });
     });
 </script>    
 {% endblock %}
