@@ -8,24 +8,24 @@
 {% block css %}
 	<link href="../static/css/choose_activities.css" rel="stylesheet">
 	<link href="../static/css/buddy_vis.css" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="../static/css/tooltipster.css" />
+	<link rel="stylesheet" type="text/css" href="../static/css/themes/tooltipster-noir.css" />
 {% endblock %}
 
 {% block body %}
 	<div class='container' id='activity-container'>	
 		<div class="row">
-			<div class="col-md-10">
+			<div class="col-md-8">
 				<h4 class='welcome'>Welcome, {{ athlete_name }}!</h4>
 				<p class="lead" >
 					Select several of your recent activities to find new STRAVA buddies 
 					who have <span class="Run">run</span> or 
-					<span class="Ride">ridden</span> similar places, and 
-					are comprable to you athletically. The more you select, the better.
+					<span class="Ride">ridden</span> similar routes, and 
+					are comparable to you athletically. Results improve with multiple selections.
 				</p>
 				<div id="error" class="col-md-5" style="display:none;"></div>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-10">
+			<div class="col-md-2 pull-down">
 			<form class="form-inline pull-right" action="{{ from_url }}" method="POST">
 				<div class="form-group">
 					<input type="hidden" name="athlete_id" value="{{ athlete_id }}"></input>
@@ -35,6 +35,8 @@
 						<option value="30">30</option>
 						<option value="40">40</option>
 						<option value="50">50</option>
+						<option value="60">60</option>
+						<option value="70">70</option>
 					</select>
 					<button class="btn" style="background-color: #f74f00; color: white;">
 	  					# activities
@@ -56,7 +58,7 @@
 			    </tr></thead>
 			    <tbody>
 			    	{% for activity in activities %}
-			    	<tr class='clickableRow' id='{{ activity["id"] }}'>
+			    	<tr class='clickableRow' id='{{ activity["id"] }}' data-polyline='{{ activity["polyline"] }}'>
 			    		<td>{{ activity["date"] }}</td>
 			    		<td style="color:black;"><strong>{{ activity["name"] }}</strong></td>
 			    		<td class="{{ activity["type"] }}">{{ activity["type"] }}</td>
@@ -106,11 +108,11 @@
 	  		<div id="stats-popup">
 	  			<span class="button b-close"><span>X</span></span>		  			
 	  			<div id="stats" class="col-md-12 pull-left">
-	  				<h3 class="stats-header">Buddy metrics</h3>
+	  				<h3 class="stats-header">Buddy metrics summary</h3>
 	  				<p class="lead">
-	  					Summary of results, try adding additional activity routes for better or different suggestions.
+	  					Try adding or varying activity routes for better or different suggestions.
 	  				</p>
-	  				<dl class="dl-horizontal" id="stats-container">
+	  				<dl class="dl-horizontal lead" id="stats-container">
   						<dt id="stats-activities">computing...</dt>
   						<dd>activities considered</dd>
   						
@@ -120,10 +122,10 @@
   						<dt id="stats-candidates">computing...</dt>
   						<dd>athletes matched your speed on these segments</dd>
 
-  						<dt id="stats-vs-friends">computing...</dt>
+  						<dt id="stats-vs-friends"><span style="font-size:15px;">computing...</span></dt>
   						<dd>of your current friends are less similar to you than these buddies</dd>
 
-  						<dt id="stats-vs-region">computing...</dt>
+  						<dt id="stats-vs-region"><span style="font-size:15px;">computing...</span></dt>
   						<dd>of regional athletes are less similar to you than these buddies</dd>
 					</dl>
 	  			</div>  		
@@ -135,15 +137,43 @@
 
 {% block javascriptbottom %}
 <script src="../static/js/bPopup.0.10.0.min.js"></script>
+<script type="text/javascript" src="../static/js/jquery.tooltipster.min.js"></script>
 <script>
+    function getTooltipHTML(rawPolyline) {
+    	var size = 200;
+    	var color = "167ebb" //"FF0000"
+    	var opacity = "BB"
+    	var baseURL = "http://maps.googleapis.com/maps/api/staticmap?size=" + 
+    				   size + "x" + size + "&path=color:0x" + color + opacity +
+    				   "%7Cenc:"
+    	var urlEncodedPolyline = encodeURIComponent(rawPolyline);
+    	
+
+    	return "<img src='" + baseURL + rawPolyline + "' />"
+    }
+
     $(document).ready(function($) { 
         $('#vis').hide();
         $('#post-buddy-options').hide();
         $("#n-activities").val( {{ n_activities|tojson }} ); // set dropdown to curr value
+        $('.pull-down').each(function() {
+    		$(this).css('margin-top', $(this).parent().height()-$(this).height())
+		});
 
-        $('.clickableRow').hover(function() { 
-            $(this).css('cursor', 'pointer');
-        }); // display hand on row mousevoer
+
+        // tooltips for polyline maps
+        $('.tooltip').tooltipster(); // activate
+        $('.clickableRow').map(function() {
+    		var rawPolyline = $(this).attr('data-polyline')
+    		
+    		$(this).tooltipster({
+            	content: $( getTooltipHTML(rawPolyline) ),
+            	position: "right",
+            	theme: 'tooltipster-noir',
+            	speed: 0,
+            	interactiveTolerance: 0 
+        	});
+        });
         
         $('.clickableRow').click(function() { 
             if ($(this).hasClass('highlight')) {
@@ -166,14 +196,14 @@
         	if (Object.keys(activities).length < 4) {
         		$('#error').show();
         		$('#error').html(
-        			"<div class='alert alert-danger' role='alert'><strong>Error!</strong>" +
-        			" Please select at least <strong>2</strong> activities</div>"
+        			"<div class='alert alert-danger' role='alert'>Please select at least " +
+        			"<strong>2</strong> activities. This ensures better buddy suggestions.</div>"
         		);
         	} else {
     			$('#find-buddy-button').hide();
 	        	$('#activity-container').hide();
 	        	$('#vis').show();
-	        	$('#choose-buddies-tab a').text('Buddies');
+	        	$('#choose-buddies-tab a').html('<strong>Buddies<strong>');
 
 	        	$.ajax({ // get data for bulk of visualization
 	        		dataType: "JSON",
@@ -184,7 +214,7 @@
 			        	makeVis(data);
 			        	populateSegmentStats(data, Object.keys(activities).length-2);
 	        		
-			        	$.ajax({
+			        	$.ajax({ // get metrics for all regional users, takes longer hence ajax
 			        		dataType: "JSON",
 			        		url: 	  "/get_buddy_stats", 
 			        		data: 	  { athlete_id:athlete_id, 
@@ -193,16 +223,21 @@
 					        	populateSimilarityStats(data);
 			        		}
 			        	});
-	        		}
+	        		},
+	        		error: function(xhr, status, error) {
+						alert("Sorry, there was an error processing these activities.")
+					}
 	        	});
 	        }
         });
+
+		// popup for buddy
 		var statsPopup;
 		$("#stats-btn").click(function() {
 			statsPopup = $('#stats-popup').bPopup({
             	opacity: 0.6,
-            	positionStyle: 'fixed',
-            	modalColor: '#167ebb'
+            	positionStyle: 'fixed', // no track scroll
+            	modalColor: '#167ebb' // blue bg
             });
         });
         $(".button.b-close").click(function() {

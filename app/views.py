@@ -117,9 +117,11 @@ def get_buddies():
                                                     activity_ids, MAX_BUDDIES)
     
     else: # need live api calls
-        result = {"todo":1}
+        print "This feature is not implemented"
 
-    return jsonify( result )
+    g = jsonify( result )
+    print g
+    return g
 
 @app.route('/get_buddy_stats', methods=["GET", "JSON"])
 def get_stats():

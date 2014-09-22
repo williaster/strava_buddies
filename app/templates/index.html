@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block css %}
-
+<link rel="stylesheet" type="text/css" href="../static/css/tooltipster.css" />
+<link rel="stylesheet" type="text/css" href="../static/css/themes/tooltipster-noir.css" />
 {% endblock %}
 {% block body %}
 	{% for message in get_flashed_messages() %}
@@ -28,9 +29,9 @@
 		        	Connect with STRAVA to receive personalized buddy recommendations
 		        </p>
 		        <br><br>
-		        <p>
-		        	<a href="{{ auth_link }}">
-						<img src="../static/imgs/ConnectWithStrava.png" alt="Authenticate at strava.com"/>
+		        <p>	
+		        	<a href="#" >
+						<img src="../static/imgs/ConnectWithStrava.png" alt="Authenticate at strava.com" id="authenticate-link" />
 					</a>
 		        </p>
 		        <br>
@@ -59,4 +60,22 @@
 		  	</div>
 		</div>
 	</div>
+{% endblock %}
+{% block javascriptbottom %}
+<script type="text/javascript" src="../static/js/jquery.tooltipster.min.js"></script>
+<script>
+	
+	$(document).ready(function() {
+
+       	$('.tooltip').tooltipster(); // activiate
+        $('#authenticate-link').tooltipster({
+                content: $('<span class="lead" style="font-size: 15px;">Sorry, this functionality<br>has been disabled<br>in the interest of privacy.</span>'),
+                position: "bottom",
+            	speed: 100,
+            	interactiveTolerance: 200 
+        });
+
+    });
+
+</script>    
 {% endblock %}

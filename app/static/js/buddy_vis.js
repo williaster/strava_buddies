@@ -99,7 +99,7 @@ function makeVis(data) {
 
 	// Colors and highlighting functions / variables
 	var highlightColor   = "#f74f00";
-	var unhighlightColor = "#e5e5e5";
+	var unhighlightColor = "#cccccc";
 	var userColor = "#737373";
 	var clicked = false;
 
@@ -420,7 +420,7 @@ function makeVis(data) {
 			.attr("x", 0.4 * sumMetricWidth)
 			.attr("y", 0.25 * sumMetricHeight)
 			.style("text-anchor", "end")
-			.text("Ride ct")
+			.text("4-week ride ct")
 			.style("fill", "black");
 		metricContainer.append("text")
 			.attr("class", "ital metric-value")
@@ -442,7 +442,7 @@ function makeVis(data) {
 			.attr("x", 0.4 * sumMetricWidth)
 			.attr("y", 0.4 * sumMetricHeight)
 			.style("text-anchor", "end")
-			.text("Run ct")
+			.text("4-week run ct")
 			.style("fill", "black");
 		metricContainer.append("text")
 			.attr("class", "ital metric-value")
@@ -517,7 +517,7 @@ function makeVis(data) {
 			.attr("id", function(d) { return "g_" + d.athlete_id; } )
 			.attr("class", "arc")
 			.datum({ innerRadius: rad2, outerRadius: rad2 + 1.5, endAngle: 3*pi/2  })
-			.style("fill", "#ddd")
+			.style("fill", unhighlightColor)
 			.attr("transform", "translate(" + rad2 + ",0)")
 			// .attr("transform", "translate(" + (rad2 + 2*rad1) + ",0)")
 			.attr("d", arc);
@@ -526,7 +526,7 @@ function makeVis(data) {
 			.attr("id", function(d) { return "g_" + d.athlete_id; } )
 			.attr("class", "arc")
 			.datum({ innerRadius: rad3, outerRadius: rad3 + 1.5, endAngle: 3*pi/2  })
-			.style("fill", "#ddd")
+			.style("fill", unhighlightColor)
 			.attr("transform", "translate(" + rad3 + ",0)")
 			// .attr("transform", "translate(" + (rad3 + 2*rad1 + 2*rad2) + ",0)")
 			.attr("d", arc);
