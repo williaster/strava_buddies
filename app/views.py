@@ -20,10 +20,10 @@ app.secret_key = 'some_secret' # for flashes
 conn = mdb.connect(user="root", host="localhost", 
                    db="accts_and_apps", charset='utf8')
 
-cached_athletes = [ {"id": 1153632, "name" : "Athlete 1"},
-                    {"id": 164890, "name" : "Athlete 2"},
-                    {"id": 653, "name" : "Athlete 3"},
-                    {"id": 1744737, "name": "Athlete 4" } ]
+cached_athletes = [ {"id": 1153632, "name" : "Chris W."},
+                    {"id": 164890, "name"  : "Nicole O."},
+                    {"id": 653, "name"     : "Rob M."},
+                    {"id": 1744737, "name" : "David G." } ]
 
 
 #..............................................................................
@@ -118,10 +118,8 @@ def get_buddies():
     
     else: # need live api calls
         print "This feature is not implemented"
-
-    g = jsonify( result )
-    print g
-    return g
+ 
+    return jsonify( result )
 
 @app.route('/get_buddy_stats', methods=["GET", "JSON"])
 def get_stats():
@@ -129,7 +127,6 @@ def get_stats():
     min_buddy_sim = float( request.args["min_buddy_similarity"])
     
     result = cbuds.get_stats(conn, athlete_id, min_buddy_sim)
-    print result
     return jsonify( result )
 
 
