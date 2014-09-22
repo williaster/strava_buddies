@@ -1,6 +1,7 @@
 #!/Users/christopherwilliams/dotfiles/virtualenvs/.virtualenvs/lighttable/bin/python
 info="""Helper functions which manage the logic for buddy recommendations, with
-        cached data (ie not through api calls)
+        cached data (ie not through api calls). This is what the app exclusively
+        uses currently.
      """
 
 __author__ = "ccwilliams"
@@ -13,6 +14,9 @@ import pymysql as mdb
 import pandas as pd
 import numpy as np
 import filters 
+import urllib
+
+#pd.set_option("mode.use_inf_as_null", True)
 
 TZ_LOCAL  = tz.tzlocal()
 TABLES    = { "data":                "athletes_data",
@@ -29,7 +33,7 @@ def get_user_activity_options(conn, athlete_id, return_max, min_distance=2,
        ('Run' or 'Ride'). Returns as a dictoinary of items for use in dynamic html,
        or as the raw sql query
     """
-    act_type = "AND activity_type = '%s'" % act_type if act_type else act_type
+    act_type = "AND activity_type = '%s'" % act_type if act_type else ""
 
     statement = \
         "SELECT * FROM %s WHERE athlete_id = %i AND distance >= %i %s LIMIT %i;" \
@@ -47,13 +51,14 @@ def get_activity_summaries(sql_activity_query):
        elevation, type, and date.
     """
     summaries = []
-    for activity in sql_activity_query:
-        ath_id, act_id, act_type, act_name, \
+    for activity in sql_activity_query: 
+        ath_id, act_id, act_type, act_name, act_polyline, \
             act_dist, act_elev, act_datetime = activity
         
         as_dct = { "id": act_id, "name": act_name, "type": act_type, 
                    "distance": act_dist, "elevation": act_elev, 
-                   "date": act_datetime.replace(tzinfo=TZ_LOCAL).strftime("%m/%d") }
+                   "date": act_datetime.replace(tzinfo=TZ_LOCAL).strftime("%m/%d"),
+                   "polyline": urllib.quote( act_polyline, "" ) }
         summaries.append(as_dct)
 
     print "returning %i activities" % len(summaries)
@@ -197,6 +202,8 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
        athlete_id vs thier friends and athlete_id vs candidate_buddy_ids
     """
     data, ndata, info = get_data_norm_data_athlete_info(conn)
+    data.replace([np.inf, -np.inf], np.nan)
+
     weights = get_weights(data, athlete_id)
 
     athlete_ndata = ndata.ix[athlete_id, :]
@@ -219,7 +226,6 @@ def get_similarities(conn, athlete_id, friend_ids, candidate_buddy_ids):
 
 def get_buddies_and_similarities(conn, athlete_id, activity_ids, max_buddies):
     """Returns all data needed for candidate buddy recommendation and visualization:
-       #TODO
     """
     friend_ids      = get_athlete_connections(conn, athlete_id) 
     buddies, n_segs = get_candidate_buddies(conn, athlete_id, activity_ids) 
@@ -230,10 +236,15 @@ def get_buddies_and_similarities(conn, athlete_id, activity_ids, max_buddies):
     similarity_buddies, \
     user_data        = get_similarities(conn, athlete_id, friend_ids, buddy_ids)
 
-    
+    similarity_buddies = similarity_buddies[ similarity_buddies.sim_dowfreqs != float("inf") ]
     final_buddies = similarity_buddies.sort("sim", ascending=False)[:max_buddies]
 
-    print final_buddies["sim"].min()
+    print "val", final_buddies["sim_dowfreqs"]
+    print "isnan", np.isnan( final_buddies["sim_dowfreqs"] )
+    print "== nan", np.nan == final_buddies["sim_dowfreqs"]
+    print "== float64", float('inf') == final_buddies["sim_dowfreqs"]
+
+    print final_buddies.to_json()
 
     result = { "n_candidates": n_candidates, # conversions for d3 data formatting
                "n_segments":   n_segs,
@@ -241,7 +252,6 @@ def get_buddies_and_similarities(conn, athlete_id, activity_ids, max_buddies):
                "user":         user_data.to_json(),
                "buddies":      final_buddies.T.to_dict().values(),
                "min_buddy_similarity":  final_buddies["sim"].min() }
-
     return result
 
 def get_stats(conn, athlete_id, min_buddy_sim):
@@ -261,14 +271,11 @@ def get_stats(conn, athlete_id, min_buddy_sim):
         df_sim_all["sim"][ df_sim_all["sim"] <  min_buddy_sim ].shape[0] / \
         float( df_sim_all.shape[0] )
 
-    print fract_friends_lower
-    print fract_users_lower
+    # print fract_friends_lower
+    # print fract_users_lower
 
     perc_friends_lower = "%2.0f" % (fract_friends_lower * 100)
     perc_users_lower   = "%2.0f" % (fract_users_lower   * 100)
-
-    print perc_friends_lower
-    print perc_users_lower
 
     return { "perc_friends_lower" : perc_friends_lower,
              "perc_users_lower":    perc_users_lower }

@@ -1,9 +1,16 @@
 rect.metric {
-	fill: #e5e5e5;
+	fill: #cccccc;
+}
+rect {
+	
 }
 rect.athlete-td {
-	fill: #e5e5e5;
+	fill: #cccccc;
 	stroke: #f74f00;
+	cursor: pointer;
+}
+rect.metric {
+	cursor: pointer;
 }
 .table-label {
 	fill: #f74f00;
@@ -23,6 +30,9 @@ rect.athlete-td {
 }
 text.metric-label {
 	fill: black;
+}
+.friend-avg-label {
+	pointer-events: none;
 }
 text.athlete-name,
 text.athlete-number {
@@ -73,7 +83,7 @@ text.metric-label {
 	font-size: 15px;
 }
 text.user-label {
-	font-size: 15px;
+	font-size: 16px;
 }
 text.friend-avg-label {
 	fill: #167ebb;

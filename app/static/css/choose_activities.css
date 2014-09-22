@@ -6,6 +6,9 @@
 	color: #f74f00;
 	font-weight: bold;
 }
+.clickableRow {
+	cursor: pointer;
+}
 .Run {
 	color: #40aa0c;
 	font-weight: bold;
@@ -21,7 +24,7 @@ td {
 	color: #737373;
 }
 .lead {
-	font-size: 16px;
+	font-size: 18px;
 }
 #stats-popup {
 	background-color: #fff;
