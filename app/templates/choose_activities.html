@@ -16,12 +16,12 @@
 	<div class='container' id='activity-container'>	
 		<div class="row">
 			<div class="col-md-8">
-				<h4 class='welcome'>Welcome, {{ athlete_name }}!</h4>
-				<p class="lead" >
-					Select several of your recent activities to find new STRAVA buddies 
-					who have <span class="Run">run</span> or 
-					<span class="Ride">ridden</span> similar routes, and 
-					are comparable to you athletically. Results improve with multiple selections.
+				<h3 class='welcome'>Welcome, {{ athlete_name }}!</h3>
+				<p class="lead">
+					<span id="choose-emph">
+					Choose which of your recent activities you would like to find buddies for.
+					</span><br>
+					Results improve with multiple selections.
 				</p>
 				<div id="error" class="col-md-5" style="display:none;"></div>
 			</div>
@@ -36,7 +36,6 @@
 						<option value="40">40</option>
 						<option value="50">50</option>
 						<option value="60">60</option>
-						<option value="70">70</option>
 					</select>
 					<button class="btn" style="background-color: #f74f00; color: white;">
 	  					# activities

@@ -1,7 +1,9 @@
 .highlight {
-	background-color: #e5e5e5;
+	background-color: #ccc;
 }
-
+.table-hover tbody tr:hover td, .table-hover tbody tr:hover th {
+  background-color: #ccc;
+}
 .Ride {
 	color: #f74f00;
 	font-weight: bold;
@@ -24,7 +26,11 @@ td {
 	color: #737373;
 }
 .lead {
-	font-size: 18px;
+	font-size: 15px;
+}
+#choose-emph {
+	color: #f74f00;
+	font-size: 20px;
 }
 #stats-popup {
 	background-color: #fff;
