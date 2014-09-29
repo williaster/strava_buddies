@@ -22,5 +22,7 @@ These simple metrics and imperfect data actually ended up working pretty well. R
 
 ![STRAVA buddies validation](app/static/imgs/validation-01.jpg?raw=true "STRAVA buddies validation")
 
+An interesting feature that you can see from looking at just three athletes is that baseline similiarity varies a fair amount. For example, random suggestsions for Athlete 2 do better than for Athlete 1 or 3. If you were Strava and had comprehensive data for more authenticated athletes, exploring the similarity matrix for more athletes would be an interesting future direction. 
+
 ####Still reading?
 Marginally more information can be found [here](http://www.stravabuddies.com/slides_wide)
