@@ -1,10 +1,12 @@
 function populateSegmentStats(data, n_activities) { 
+	// populates the segment stats part of the buddy stats table
 	$("#stats-activities").text( n_activities );
 	$("#stats-candidates").text( data.n_candidates );
 	$("#stats-segments").text( data.n_segments );
 }
 
 function populateSimilarityStats(data) {
+	// populates the similarity stats part of the buddy stats table
 	console.log(data);
 	$("#stats-vs-friends").text( data.perc_friends_lower + "%");
 	$("#stats-vs-region").text( data.perc_users_lower  + "%");
@@ -51,13 +53,13 @@ function makeVis(data) {
 	var xMetricOffset = metricWidth + metricMargin.left + metricMargin.right,
 		yMetricOffset = 10; // from top
 
-	var summaryWidth   = 450,
+	var summaryWidth   = 475,
 		summaryHeight  = 250,
 		summaryYOffset = height/2,
 		summaryXOffset = tableOffset + xMetricOffset/1.2;
 
-	var dowMargin = { left: 0 }
-		dowWidth  = 200 - dowMargin.left,
+	var dowMargin = { left: 75 }
+		dowWidth  = 275 - dowMargin.left,
 		dowHeight = 100;
 
 	var sumMetricWidth  = 300,
@@ -356,7 +358,7 @@ function makeVis(data) {
 		// Day of the week metrics
 		var dow = container.append("g")
 		  .append("svg")
-			.attr("x", 0.45 * summaryWidth)
+			.attr("x", 0.35 * summaryWidth)
 			.attr("y", 0.5 * summaryHeight)
 			.attr("width", dowWidth + dowMargin.left)
 			.attr("height", dowHeight)
@@ -372,6 +374,23 @@ function makeVis(data) {
 			.attr("y", dowHeight / 3)
 			.style("fill", "black");
 
+		// User labels
+		dow.append("text") // user labels
+			.attr("class", "ital emph user-label")
+			.attr("x", dowMargin.left - 10)
+			.attr("y", 0.53 * dowHeight + 4)
+			.style("text-anchor", "end")
+			.text(athlete_first_name)
+			.style("fill", highlightColor);
+		dow.append("text") // user labels
+			.attr("class", "ital emph user-label")
+			.attr("x", dowMargin.left - 10)
+			.attr("y", 0.8 * dowHeight + 4)
+			.style("text-anchor", "end")
+			.text("You")
+			.style("fill", userColor);
+
+		// User circles
 		var otherCircles = dow.selectAll("circle")
 			.data([ d.mon_freq, d.tues_freq, d.wed_freq,
 				    d.thurs_freq, d.fri_freq, d.sat_freq, d.sun_freq ])
@@ -394,7 +413,7 @@ function makeVis(data) {
 		// Count and distance metrics
 		var metricContainer = container.append("g")
 		  .append("svg")
-			.attr("x", 0.3 * summaryWidth)
+			.attr("x", 0.35 * summaryWidth)
 			.attr("y", 0.12 * summaryHeight)
 			.attr("width",  sumMetricWidth)
 			.attr("height", sumMetricHeight)
