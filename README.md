@@ -15,9 +15,9 @@ Hence __STRAVA buddies__.
 ###Execution
 I saw an opportunity to solve this problem using data from a social fitness, activity tracking and analytics site called [Strava](https://www.strava.com). (If you haven't used their service, you should.) Using a snapshot of Bay Area athlete activity patterns and metrics, I built a workout partner recommender for Strava users based on their own activities. (this is just a proof of principle, you can't use your own account. I'm sorry.) Here's a schematic of the algorithm, including specific metrics I looked at:
 
-TODO
+![STRAVA buddies algorithm](app/static/imgs/algorithm-01.jpg?raw=true "STRAVA buddies algorithm")
 
 ###Validation
-These simple metrics and imperfect data actually ended up working pretty well. Recommendations are actually hard to validate, but I compared the performance of STRAVA buddies vs randomly chosen athletes in the Bay Area. It clearly did better, but better than random isn't that hard. A less naive algorithm is choosing your current Strava friends. Surprisingly, Strava buddies actually suggests better matches than your current friends! This was cool validation, and also illustrates the utility that the service could provide.
+These simple metrics and imperfect data actually ended up working pretty well. Recommendations are actually hard to validate, but I compared the performance of STRAVA buddies vs randomly chosen athletes in the Bay Area. It clearly did better, but better than random isn't that hard. A less naive algorithm is choosing your current Strava friends. Surprisingly, Strava buddies actually suggests better matches than your current friends! This was true across all athletes I tested, illustrating the utility that the service could provide.
 
-TODO
+![STRAVA buddies validation](app/static/imgs/validation-01.jpg?raw=true "STRAVA buddies validation")
