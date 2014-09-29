@@ -21,3 +21,6 @@ I saw an opportunity to solve this problem using data from a social fitness, act
 These simple metrics and imperfect data actually ended up working pretty well. Recommendations are actually hard to validate, but I compared the performance of STRAVA buddies vs randomly chosen athletes in the Bay Area. It clearly did better, but better than random isn't that hard. A less naive algorithm is choosing your current Strava friends. Surprisingly, Strava buddies actually suggests better matches than your current friends! This was true across all athletes I tested, illustrating the utility that the service could provide.
 
 ![STRAVA buddies validation](app/static/imgs/validation-01.jpg?raw=true "STRAVA buddies validation")
+
+####Still reading?
+Marginally more information can be found [here](http://www.stravabuddies.com/slides_wide)
